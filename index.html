@@ -4,29 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#2c3e50">
-    <meta name="description" content="Finansowy Tracker - Aplikacja PWA do śledzenia wydatków i dochodów">
-    
+    <meta name="description" content="Finansowy Tracker - Aplikacja PWA do śledzenia wydatków i dochodów. Dodawaj transakcje, przeglądaj statystyki i zarządzaj budżetem lokalnie (PL).">
+    <meta name="keywords" content="finanse,wydatki,dochody,budzet,tracker,PWA,oszczedzanie,zarzadzanie finansami">
+
     <title>Finansowy Tracker</title>
-    
+
     <!-- Linki do favicon -->
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    
+
     <!-- Manifest PWA -->
     <link rel="manifest" href="manifest.json">
-    
-    <!-- Stylizacja CSS -->
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/responsive.css">
+
+    <!-- Preload CSS (performance) -->
+    <link rel="preload" href="css/style.css" as="style" onload="this.rel='stylesheet'">
+    <link rel="preload" href="css/responsive.css" as="style" onload="this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/responsive.css">
+    </noscript>
 </head>
 <body>
+    <a class="skip-link" href="#ekran-glowny">Przejdź do zawartości</a>
     <!-- Główny kontener aplikacji -->
     <div id="app" class="app-container">
         <!-- Nagłówek z tytułem -->
         <header class="app-header">
             <h1 class="app-title">💰 Finansowy Tracker</h1>
             <div class="header-status">
-                <span class="sync-status" id="syncStatus">✓ Online</span>
+                <span class="sync-status" id="syncStatus" role="status" aria-live="polite">✓ Online</span>
             </div>
         </header>
         
@@ -289,25 +295,30 @@
             </section>
         </main>
         
-        <!-- Nawigacja dolna -->
-        <nav class="app-navigation">
-            <button class="nav-btn active" data-ekran="ekran-glowny" title="Główny">
-                <span class="nav-icon">📊</span>
-                <span class="nav-label">Główny</span>
-            </button>
-            <button class="nav-btn" data-ekran="ekran-dodaj" title="Dodaj">
-                <span class="nav-icon">➕</span>
-                <span class="nav-label">Dodaj</span>
-            </button>
-            <button class="nav-btn" data-ekran="ekran-statystyki" title="Statystyki">
-                <span class="nav-icon">📈</span>
-                <span class="nav-label">Statystyki</span>
-            </button>
-            <button class="nav-btn" data-ekran="ekran-ustawienia" title="Ustawienia">
-                <span class="nav-icon">⚙️</span>
-                <span class="nav-label">Ustawienia</span>
-            </button>
-        </nav>
+        <!-- Nawigacja dolna w stopce (semantyka) -->
+        <footer class="app-footer" role="contentinfo">
+            <nav class="app-navigation" role="navigation" aria-label="Dolna nawigacja aplikacji">
+                <button class="nav-btn active" data-ekran="ekran-glowny" title="Główny" aria-label="Główny ekran">
+                    <span class="nav-icon" aria-hidden="true">📊</span>
+                    <span class="nav-label">Główny</span>
+                </button>
+                <button class="nav-btn" data-ekran="ekran-dodaj" title="Dodaj" aria-label="Dodaj transakcję">
+                    <span class="nav-icon" aria-hidden="true">➕</span>
+                    <span class="nav-label">Dodaj</span>
+                </button>
+                <button class="nav-btn" data-ekran="ekran-statystyki" title="Statystyki" aria-label="Statystyki">
+                    <span class="nav-icon" aria-hidden="true">📈</span>
+                    <span class="nav-label">Statystyki</span>
+                </button>
+                <button class="nav-btn" data-ekran="ekran-ustawienia" title="Ustawienia" aria-label="Ustawienia">
+                    <span class="nav-icon" aria-hidden="true">⚙️</span>
+                    <span class="nav-label">Ustawienia</span>
+                </button>
+            </nav>
+            <div class="footer-info">
+                <small>Finansowy Tracker • Wersja 1.0.0 • Działa offline</small>
+            </div>
+        </footer>
     </div>
     
     <!-- Kontener powiadomień -->
