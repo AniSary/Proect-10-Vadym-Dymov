@@ -1,12 +1,25 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Zależności Node.js
+node_modules/
+package-lock.json
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# testing
-/coverage
+# OS
+.DS_Store
+Thumbs.db
+
+# Logi
+*.log
+npm-debug.log
+
+# Build
+dist/
+build/
 
 # production
 /build

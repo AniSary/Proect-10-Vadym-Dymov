@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="description" content="Finansowy Tracker - Aplikacja PWA do śledzenia wydatków i dochodów">
+    
+    <title>Finansowy Tracker</title>
+    
+    <!-- Linki do favicon -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Stylizacja CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <!-- Główny kontener aplikacji -->
+    <div id="app" class="app-container">
+        <!-- Nagłówek z tytułem -->
+        <header class="app-header">
+            <h1 class="app-title">💰 Finansowy Tracker</h1>
+            <div class="header-status">
+                <span class="sync-status" id="syncStatus">✓ Online</span>
+            </div>
+        </header>
+        
+        <!-- Główna zawartość aplikacji -->
+        <main class="app-main">
+            <!-- EKRAN 1: GŁÓWNY (Dashboard) -->
+            <section id="ekran-glowny" class="ekran active">
+                <div class="dashboard-content">
+                    <!-- Podsumowanie finansowe -->
+                    <div class="summary-container">
+                        <div class="summary-card dochód">
+                            <span class="summary-label">Dochody:</span>
+                            <span class="summary-value" id="sumaDochodów">0,00 zł</span>
+                        </div>
+                        <div class="summary-card wydatek">
+                            <span class="summary-label">Wydatki:</span>
+                            <span class="summary-value" id="sumaWydatków">0,00 zł</span>
+                        </div>
+                        <div class="summary-card bilans">
+                            <span class="summary-label">Bilans:</span>
+                            <span class="summary-value" id="bilans">0,00 zł</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista ostatnich transakcji -->
+                    <div class="recent-transactions">
+                        <h2>Ostatnie transakcje</h2>
+                        <div id="listaTransakcji" class="transaction-list">
+                            <p class="empty-state">Brak transakcji. Dodaj nową!</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- EKRAN 2: DODAJ TRANSAKCJĘ -->
+            <section id="ekran-dodaj" class="ekran">
+                <div class="form-container">
+                    <h2>Dodaj nową transakcję</h2>
+                    
+                    <form id="formularzTransakcji" class="transaction-form">
+                        <!-- Wybór typu transakcji -->
+                        <div class="form-group">
+                            <label for="typ">Typ transakcji:</label>
+                            <select id="typ" name="typ" required>
+                                <option value="wydatek">Wydatek</option>
+                                <option value="dochód">Dochód</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Wybór kategorii -->
+                        <div class="form-group">
+                            <label for="kategoria">Kategoria:</label>
+                            <select id="kategoria" name="kategoria" required>
+                                <option value="">-- Wybierz kategorię --</option>
+                                <optgroup label="Wydatki">
+                                    <option value="jedzenie">🍔 Jedzenie</option>
+                                    <option value="transport">🚗 Transport</option>
+                                    <option value="rozrywka">🎬 Rozrywka</option>
+                                    <option value="zdrowie">⚕️ Zdrowie</option>
+                                    <option value="edukacja">📚 Edukacja</option>
+                                    <option value="inne">📦 Inne</option>
+                                </optgroup>
+                                <optgroup label="Dochody">
+                                    <option value="wyplata">💼 Wypłata</option>
+                                    <option value="premia">🎁 Premia</option>
+                                    <option value="inwestycje">📈 Inwestycje</option>
+                                    <option value="inne-dochod">📦 Inne</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        
+                        <!-- Kwota -->
+                        <div class="form-group">
+                            <label for="kwota">Kwota (zł):</label>
+                            <input type="number" id="kwota" name="kwota" placeholder="0.00" step="0.01" min="0" required>
+                        </div>
+                        
+                        <!-- Data transakcji -->
+                        <div class="form-group">
+                            <label for="data">Data:</label>
+                            <input type="date" id="data" name="data" required>
+                        </div>
+                        
+                        <!-- Opis/Notatka -->
+                        <div class="form-group">
+                            <label for="opis">Opis (opcjonalnie):</label>
+                            <textarea id="opis" name="opis" placeholder="Dodaj notatkę..." rows="4"></textarea>
+                        </div>
+                        
+                        <!-- Przyciski -->
+                        <div class="form-buttons">
+                            <button type="submit" class="btn btn-primary">Dodaj transakcję</button>
+                            <button type="reset" class="btn btn-secondary">Wyczyść</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+            
+            <!-- EKRAN 3: STATYSTYKI -->
+            <section id="ekran-statystyki" class="ekran">
+                <div class="statistics-container">
+                    <h2>Statystyki finansowe</h2>
+                    
+                    <!-- Filtry statystyk -->
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label for="filterMiesiac">Miesiąc:</label>
+                            <select id="filterMiesiac">
+                                <option value="">Wszystkie</option>
+                                <option value="0">Styczeń</option>
+                                <option value="1">Luty</option>
+                                <option value="2">Marzec</option>
+                                <option value="3">Kwiecień</option>
+                                <option value="4">Maj</option>
+                                <option value="5">Czerwiec</option>
+                                <option value="6">Lipiec</option>
+                                <option value="7">Sierpień</option>
+                                <option value="8">Wrzesień</option>
+                                <option value="9">Październik</option>
+                                <option value="10">Listopad</option>
+                                <option value="11">Grudzień</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterRok">Rok:</label>
+                            <input type="number" id="filterRok" min="2020" value="2025">
+                        </div>
+                    </div>
+                    
+                    <!-- Podsumowanie statystyk -->
+                    <div class="stats-summary">
+                        <div class="stat-card">
+                            <h3>Całkowite dochody</h3>
+                            <p class="stat-value" id="statDochodyCałkowite">0,00 zł</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Całkowite wydatki</h3>
+                            <p class="stat-value" id="statWydatkiCałkowite">0,00 zł</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Saldo</h3>
+                            <p class="stat-value" id="statSaldo">0,00 zł</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Wykresy -->
+                    <div class="charts-container">
+                        <!-- Wykres kołowy wydatków po kategoriach -->
+                        <div class="chart-wrapper">
+                            <h3>Wydatki po kategoriach</h3>
+                            <canvas id="chartWydatki" class="chart-canvas"></canvas>
+                        </div>
+                        
+                        <!-- Wykres słupkowy dochodów vs wydatków -->
+                        <div class="chart-wrapper">
+                            <h3>Dochody vs Wydatki</h3>
+                            <canvas id="chartPortfolio" class="chart-canvas"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabela kategorii -->
+                    <div class="categories-table">
+                        <h3>Rozbicie po kategoriach</h3>
+                        <table id="tabelaKategorii">
+                            <thead>
+                                <tr>
+                                    <th>Kategoria</th>
+                                    <th>Kwota</th>
+                                    <th>Procent</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaKategoriiBody">
+                                <tr class="empty-row">
+                                    <td colspan="3">Brak danych</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- EKRAN 4: USTAWIENIA -->
+            <section id="ekran-ustawienia" class="ekran">
+                <div class="settings-container">
+                    <h2>Ustawienia</h2>
+                    
+                    <!-- Sekcja ekranu -->
+                    <div class="settings-section">
+                        <h3>Wygląd</h3>
+                        <div class="setting-item">
+                            <label for="ciemnyMotyw">
+                                <input type="checkbox" id="ciemnyMotyw" name="ciemnyMotyw">
+                                Ciemny motyw
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Sekcja powiadomień -->
+                    <div class="settings-section">
+                        <h3>Powiadomienia</h3>
+                        <div class="setting-item">
+                            <label for="powiadomieniaWlaczone">
+                                <input type="checkbox" id="powiadomieniaWlaczone" name="powiadomieniaWlaczone" checked>
+                                Włącz powiadomienia
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label for="powiadomieniaLimitu">
+                                <input type="checkbox" id="powiadomieniaLimitu" name="powiadomieniaLimitu" checked>
+                                Powiadomienia o limicie wydatków
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Sekcja danych -->
+                    <div class="settings-section">
+                        <h3>Dane</h3>
+                        <div class="setting-item">
+                            <label for="limitWydatkow">Limit wydatków (zł):</label>
+                            <input type="number" id="limitWydatkow" name="limitWydatkow" placeholder="0.00" step="0.01" min="0" value="3000">
+                        </div>
+                        <div class="setting-item">
+                            <label for="waluty">Waluta:</label>
+                            <select id="waluty" name="waluty">
+                                <option value="PLN">PLN (Polska)</option>
+                                <option value="EUR">EUR (Euro)</option>
+                                <option value="USD">USD (Dollar)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Sekcja kopii zapasowej -->
+                    <div class="settings-section">
+                        <h3>Kopia zapasowa</h3>
+                        <div class="setting-buttons">
+                            <button id="exportData" class="btn btn-primary">Eksportuj dane (JSON)</button>
+                            <button id="importData" class="btn btn-secondary">Importuj dane</button>
+                            <input type="file" id="fileInput" accept=".json" style="display: none;">
+                        </div>
+                    </div>
+                    
+                    <!-- Sekcja niebezpieczna -->
+                    <div class="settings-section danger">
+                        <h3>Opcje niebezpieczne</h3>
+                        <div class="setting-buttons">
+                            <button id="usunWszytkieTransakcje" class="btn btn-danger">Usuń wszystkie transakcje</button>
+                            <button id="resetDoUstawienDomyslnych" class="btn btn-danger">Reset do ustawień domyślnych</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Informacja aplikacji -->
+                    <div class="settings-section info">
+                        <h3>Informacja</h3>
+                        <p><strong>Aplikacja:</strong> Finansowy Tracker</p>
+                        <p><strong>Wersja:</strong> 1.0.0</p>
+                        <p><strong>Technologia:</strong> Progressive Web App (PWA)</p>
+                        <p><strong>Praca offline:</strong> ✓ Obsługiwana</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Nawigacja dolna -->
+        <nav class="app-navigation">
+            <button class="nav-btn active" data-ekran="ekran-glowny" title="Główny">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Główny</span>
+            </button>
+            <button class="nav-btn" data-ekran="ekran-dodaj" title="Dodaj">
+                <span class="nav-icon">➕</span>
+                <span class="nav-label">Dodaj</span>
+            </button>
+            <button class="nav-btn" data-ekran="ekran-statystyki" title="Statystyki">
+                <span class="nav-icon">📈</span>
+                <span class="nav-label">Statystyki</span>
+            </button>
+            <button class="nav-btn" data-ekran="ekran-ustawienia" title="Ustawienia">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Ustawienia</span>
+            </button>
+        </nav>
+    </div>
+    
+    <!-- Kontener powiadomień -->
+    <div id="notificationsContainer" class="notifications-container"></div>
+    
+    <!-- Skrypty JavaScript -->
+    <script src="js/database.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- Rejestracja Service Workera -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => {
+                        console.log('Service Worker zarejestrowany:', reg);
+                    })
+                    .catch(err => {
+                        console.log('Błąd rejestracji Service Worker:', err);
+                    });
+            });
+        }
+        
+        // Monitorowanie statusu połączenia
+        window.addEventListener('online', () => {
+            document.getElementById('syncStatus').textContent = '✓ Online';
+            document.getElementById('syncStatus').className = 'sync-status online';
+        });
+        
+        window.addEventListener('offline', () => {
+            document.getElementById('syncStatus').textContent = '↻ Offline';
+            document.getElementById('syncStatus').className = 'sync-status offline';
+        });
+        
+        // Inicjalizacja daty dzisiejszej w formularzu
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('data');
+            const dzisiaj = new Date().toISOString().split('T')[0];
+            dateInput.value = dzisiaj;
+        });
+    </script>
+</body>
+</html>

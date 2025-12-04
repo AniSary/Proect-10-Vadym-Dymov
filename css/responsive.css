@@ -1,0 +1,602 @@
+/**
+ * Finansowy Tracker - Responsywne style CSS
+ * Mobile-first approach: priorytetu mają urządzenia mobilne
+ * Breakpoints: 480px, 768px, 1024px, 1280px
+ */
+
+/* ================================
+   MOBILE - Urządzenia do 480px
+   ================================ */
+@media (max-width: 480px) {
+    :root {
+        --font-size-2xl: 1.25rem;
+        --font-size-lg: 1rem;
+        --spacing-lg: 1rem;
+        --spacing-xl: 1.5rem;
+    }
+    
+    .app-container {
+        font-size: 14px;
+    }
+    
+    .app-header {
+        padding: var(--spacing-sm) var(--spacing-md);
+        height: 56px;
+    }
+    
+    .app-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .header-status {
+        font-size: var(--font-size-xs);
+    }
+    
+    .app-main {
+        padding-bottom: 70px;
+    }
+    
+    .ekran {
+        padding: var(--spacing-md);
+    }
+    
+    /* Summary Cards */
+    .summary-container {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+    
+    .summary-card {
+        padding: var(--spacing-md);
+    }
+    
+    .summary-label {
+        font-size: var(--font-size-xs);
+    }
+    
+    .summary-value {
+        font-size: var(--font-size-xl);
+    }
+    
+    /* Transakcje */
+    .transaction-item {
+        padding: var(--spacing-sm);
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .transaction-amount {
+        text-align: left;
+        margin-top: var(--spacing-sm);
+    }
+    
+    /* Formularze */
+    .form-container {
+        padding: var(--spacing-md);
+    }
+    
+    .form-buttons {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .btn {
+        padding: var(--spacing-md) var(--spacing-md);
+        flex: 1;
+    }
+    
+    /* Statystyki */
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-wrapper {
+        padding: var(--spacing-md);
+    }
+    
+    .filters {
+        flex-direction: column;
+    }
+    
+    .filter-group {
+        min-width: auto;
+    }
+    
+    .stat-card {
+        padding: var(--spacing-md);
+    }
+    
+    .stat-card h3 {
+        font-size: var(--font-size-xs);
+    }
+    
+    .stat-value {
+        font-size: var(--font-size-lg);
+    }
+    
+    .categories-table {
+        padding: var(--spacing-md);
+        font-size: var(--font-size-sm);
+    }
+    
+    table th,
+    table td {
+        padding: var(--spacing-sm);
+    }
+    
+    /* Ustawienia */
+    .settings-section {
+        padding: var(--spacing-md);
+    }
+    
+    .setting-buttons {
+        flex-direction: column;
+    }
+    
+    .setting-buttons .btn {
+        width: 100%;
+    }
+    
+    /* Nawigacja dolna */
+    .app-navigation {
+        height: 60px;
+    }
+    
+    .nav-btn {
+        font-size: var(--font-size-xs);
+    }
+    
+    .nav-icon {
+        font-size: var(--font-size-lg);
+    }
+    
+    .nav-label {
+        max-width: 40px;
+        font-size: 10px;
+    }
+    
+    /* Powiadomienia */
+    .notifications-container {
+        left: var(--spacing-md);
+        right: var(--spacing-md);
+        top: calc(var(--header-height) + var(--spacing-md));
+        max-width: none;
+    }
+    
+    .notification {
+        min-width: auto;
+    }
+}
+
+/* ================================
+   TABLET - Urządzenia 481px - 768px
+   ================================ */
+@media (min-width: 481px) and (max-width: 768px) {
+    .summary-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .form-buttons {
+        flex-direction: row;
+    }
+    
+    .setting-buttons {
+        flex-direction: row;
+    }
+    
+    .settings-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-md);
+        align-items: center;
+    }
+    
+    .settings-section h3 {
+        grid-column: 1 / -1;
+        margin-bottom: 0;
+    }
+}
+
+/* ================================
+   DESKTOP - Urządzenia 769px - 1024px
+   ================================ */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .summary-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .charts-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stats-summary {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .transaction-item {
+        flex-direction: row;
+    }
+    
+    .transaction-amount {
+        text-align: right;
+        margin-top: 0;
+    }
+    
+    .categories-table {
+        font-size: var(--font-size-md);
+    }
+}
+
+/* ================================
+   DUŻY DESKTOP - Urządzenia 1025px+
+   ================================ */
+@media (min-width: 1025px) {
+    .app-main {
+        max-width: 1400px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    
+    .summary-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .charts-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stats-summary {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .filters {
+        gap: var(--spacing-lg);
+    }
+    
+    .filter-group {
+        min-width: 200px;
+    }
+    
+    .form-buttons {
+        max-width: 400px;
+    }
+    
+    .settings-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-lg);
+    }
+    
+    .settings-section h3 {
+        grid-column: 1 / -1;
+    }
+    
+    .setting-item {
+        gap: var(--spacing-lg);
+    }
+    
+    .notifications-container {
+        right: var(--spacing-xl);
+        top: calc(var(--header-height) + var(--spacing-xl));
+    }
+    
+    .notification {
+        min-width: 400px;
+    }
+}
+
+/* ================================
+   LANDSCAPE ORIENTATION
+   ================================ */
+@media (orientation: landscape) and (max-height: 500px) {
+    .app-header {
+        height: 50px;
+    }
+    
+    .app-main {
+        padding-bottom: 60px;
+    }
+    
+    .app-navigation {
+        height: 60px;
+    }
+    
+    .ekran {
+        padding: var(--spacing-sm);
+    }
+    
+    .summary-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .charts-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .chart-wrapper {
+        padding: var(--spacing-sm);
+    }
+}
+
+/* ================================
+   LARGE DESKTOP - ULTRA WIDE
+   ================================ */
+@media (min-width: 1440px) {
+    .app-main {
+        max-width: 1600px;
+    }
+    
+    .summary-container {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .charts-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .categories-table {
+        font-size: var(--font-size-lg);
+    }
+    
+    table th,
+    table td {
+        padding: var(--spacing-lg);
+    }
+}
+
+/* ================================
+   DARK MODE - MEDIA QUERY
+   ================================ */
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+    }
+    
+    body {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+    }
+}
+
+/* ================================
+   HIGH CONTRAST MODE
+   ================================ */
+@media (prefers-contrast: more) {
+    :root {
+        --border-color: #000;
+        --text-primary: #000;
+        --text-secondary: #333;
+    }
+    
+    .summary-card,
+    .stat-card,
+    .settings-section {
+        border-width: 2px;
+        border-style: solid;
+    }
+    
+    .btn {
+        border-width: 2px;
+        border-style: solid;
+    }
+}
+
+/* ================================
+   REDUCED MOTION
+   ================================ */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* ================================
+   PRINT MEDIA
+   ================================ */
+@media print {
+    :root {
+        color-scheme: light;
+    }
+    
+    body {
+        background-color: white;
+        color: black;
+    }
+    
+    .app-header,
+    .app-navigation,
+    .notifications-container,
+    .btn,
+    .filters,
+    .form-container {
+        display: none !important;
+    }
+    
+    .app-container {
+        height: auto;
+        flex-direction: column;
+    }
+    
+    .app-main {
+        padding-bottom: 0;
+        max-width: 100%;
+    }
+    
+    .ekran {
+        page-break-inside: avoid;
+    }
+    
+    .transaction-item,
+    table tr {
+        page-break-inside: avoid;
+    }
+}
+
+/* ================================
+   TOUCH DEVICE OPTIMIZATION
+   ================================ */
+@media (hover: none) and (pointer: coarse) {
+    /* Większe przyciski dla urządzeń dotykowych */
+    .btn {
+        min-height: 44px;
+        padding: 12px 16px;
+    }
+    
+    .nav-btn {
+        min-height: 48px;
+    }
+    
+    input[type="checkbox"],
+    input[type="radio"] {
+        min-width: 44px;
+        min-height: 44px;
+        cursor: pointer;
+    }
+    
+    /* Usunięcie hover efektów */
+    .btn:hover {
+        transform: none;
+    }
+    
+    .transaction-item:hover {
+        transform: none;
+    }
+    
+    .summary-card:hover {
+        transform: none;
+    }
+}
+
+/* ================================
+   NO TOUCH DEVICE OPTIMIZATION
+   ================================ */
+@media (hover: hover) and (pointer: fine) {
+    /* Hover efekty dla deviceów z myszą */
+    .btn {
+        cursor: pointer;
+    }
+    
+    .transaction-item {
+        cursor: pointer;
+    }
+}
+
+/* ================================
+   VERY SMALL SCREENS (< 360px)
+   ================================ */
+@media (max-width: 360px) {
+    :root {
+        --font-size-md: 0.875rem;
+        --font-size-lg: 1rem;
+        --spacing-md: 0.75rem;
+        --spacing-lg: 1rem;
+    }
+    
+    .app-title {
+        font-size: var(--font-size-lg);
+    }
+    
+    .summary-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-card {
+        padding: var(--spacing-sm);
+    }
+    
+    .nav-label {
+        display: none;
+    }
+}
+
+/* ================================
+   PRINT - LANDSCAPE MODE
+   ================================ */
+@media print and (orientation: landscape) {
+    body {
+        columns: 2;
+        column-gap: 1cm;
+    }
+}
+
+/* ================================
+   ASPECT RATIO - SQUARE SCREENS
+   ================================ */
+@media (aspect-ratio: 1 / 1) {
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ================================
+   ACCESSIBILITY - FOCUS VISIBLE
+   ================================ */
+@media (prefers-focus-visible) {
+    .btn:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+        outline: 3px solid var(--secondary-color);
+        outline-offset: 2px;
+    }
+}
+
+/* ================================
+   MOBILE - SMALL LANDSCAPE
+   ================================ */
+@media (max-width: 640px) and (orientation: landscape) {
+    .app-header {
+        height: 48px;
+    }
+    
+    .app-title {
+        font-size: var(--font-size-lg);
+    }
+    
+    .ekran {
+        padding: var(--spacing-sm);
+    }
+    
+    .summary-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+    }
+}
+
+/* ================================
+   FOLDABLE DEVICES
+   ================================ */
+@media (device-width: 550px) and (device-height: 853px) and (prefers-color-scheme: dark) {
+    .app-main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-lg);
+    }
+    
+    .ekran {
+        display: none;
+    }
+    
+    .ekran.active {
+        display: grid;
+        grid-column: 1 / -1;
+    }
+}

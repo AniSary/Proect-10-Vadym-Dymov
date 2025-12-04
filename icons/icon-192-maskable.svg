@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <mask id="mask">
+      <rect width="192" height="192" fill="white"/>
+      <circle cx="96" cy="96" r="70" fill="black"/>
+    </mask>
+  </defs>
+  <rect width="192" height="192" fill="#2c3e50" rx="40"/>
+  <text x="96" y="140" font-size="144" font-weight="bold" fill="white" text-anchor="middle" mask="url(#mask)">💰</text>
+</svg>
