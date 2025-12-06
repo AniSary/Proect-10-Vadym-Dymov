@@ -998,7 +998,8 @@ const App = (() => {
     // Zwróć publiczne metody
     return {
         init,
-        removeCategory  // Wystawiony do globalnego scope dla onclick w HTML
+        removeCategory,  // Wystawiony do globalnego scope dla onclick w HTML
+        addNewCategory   // Wystawiony do globalnego scope
     };
 })();
 
