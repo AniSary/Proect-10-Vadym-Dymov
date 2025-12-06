@@ -618,11 +618,24 @@ const App = (() => {
         const newExpenseInput = document.getElementById('newExpenseCategory');
         const newIncomeInput = document.getElementById('newIncomeCategory');
         
+        console.log('[App] Szukam przycisków kategorii:', {
+            addExpenseBtn: !!addExpenseBtn,
+            addIncomeBtn: !!addIncomeBtn,
+            newExpenseInput: !!newExpenseInput,
+            newIncomeInput: !!newIncomeInput
+        });
+        
         if (addExpenseBtn) {
-            addExpenseBtn.addEventListener('click', () => addNewCategory('wydatki', newExpenseInput));
+            addExpenseBtn.addEventListener('click', () => {
+                console.log('[App] Kliknieto Dodaj wydatki');
+                addNewCategory('wydatki', newExpenseInput);
+            });
         }
         if (addIncomeBtn) {
-            addIncomeBtn.addEventListener('click', () => addNewCategory('dochody', newIncomeInput));
+            addIncomeBtn.addEventListener('click', () => {
+                console.log('[App] Kliknieto Dodaj dochody');
+                addNewCategory('dochody', newIncomeInput);
+            });
         }
         
         if (newExpenseInput) {
