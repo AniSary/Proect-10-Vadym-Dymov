@@ -38,7 +38,103 @@ const App = (() => {
         // Request notification permission
         Notifications.requestNotificationPermission();
         
+        // Spróbuj określić lokalizację użytkownika (do auto-ustawienia waluty)
+        detectLocationAndSetCurrency();
+        
         console.log('[App] Inicjalizacja zakończona');
+    }
+    
+    /**
+     * GEOLOKACJA - Auto-detect waluty na podstawie lokalizacji
+     */
+    
+    function detectLocationAndSetCurrency() {
+        // Sprawdź czy geolokacja jest dostępna
+        if (!navigator.geolocation) {
+            console.log('[Geolocation] Geolocation API nie jest dostępna w tej przeglądarce');
+            return;
+        }
+        
+        // Sprawdź czy użytkownik już ma ustawioną walutę (nie overriduj jej)
+        const currentSettings = DB.getSettings();
+        if (currentSettings.waluty && currentSettings.waluty !== 'PLN') {
+            console.log('[Geolocation] Waluta już ustawiona na:', currentSettings.waluty);
+            return;
+        }
+        
+        // Żądaj dostępu do lokalizacji
+        navigator.geolocation.getCurrentPosition(
+            (position) => handleGeolocationSuccess(position),
+            (error) => handleGeolocationError(error),
+            { timeout: 5000, maximumAge: 3600000 } // 5s timeout, cache 1h
+        );
+    }
+    
+    function handleGeolocationSuccess(position) {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        console.log(`[Geolocation] Lokalizacja: ${lat}, ${lng}`);
+        
+        // Mapuj współrzędne do waluty (uproszczona logika)
+        const currency = mapCoordinatesToCurrency(lat, lng);
+        
+        if (currency && currency !== 'PLN') {
+            console.log(`[Geolocation] Auto-ustawiono walutę na: ${currency}`);
+            const settings = DB.getSettings();
+            settings.waluty = currency;
+            DB.saveSettings(settings);
+            
+            // Aktualizuj select w UI
+            const currencySelect = document.getElementById('waluty');
+            if (currencySelect) {
+                currencySelect.value = currency;
+            }
+            
+            // Odśwież dashboard z nową walutą
+            refreshDashboard();
+        }
+    }
+    
+    function handleGeolocationError(error) {
+        switch(error.code) {
+            case error.PERMISSION_DENIED:
+                console.log('[Geolocation] Użytkownik odmówił dostępu do lokalizacji');
+                break;
+            case error.POSITION_UNAVAILABLE:
+                console.log('[Geolocation] Informacje o lokalizacji nie są dostępne');
+                break;
+            case error.TIMEOUT:
+                console.log('[Geolocation] Żądanie dla lokalizacji timeout');
+                break;
+            default:
+                console.log('[Geolocation] Nieznąd błąd lokalizacji:', error.message);
+        }
+    }
+    
+    function mapCoordinatesToCurrency(lat, lng) {
+        // Uproszczona mapa krajów -> walut
+        // Polska: 49-55°N, 14-24°E
+        if (lat >= 49 && lat <= 55 && lng >= 14 && lng <= 24) {
+            return 'PLN';
+        }
+        
+        // Europa (Euro) - przybliżone
+        if (lat >= 35 && lat <= 71 && lng >= -10 && lng <= 40) {
+            // Wyszczególnione kraje Eurostref
+            if ((lat >= 48.5 && lat <= 54.5 && lng >= 5.5 && lng <= 15.5) ||  // Niemcy, Czechy
+                (lat >= 43 && lat <= 51 && lng >= -5 && lng <= 8) ||           // Francja, Belgia
+                (lat >= 40.5 && lat <= 48 && lng >= 4 && lng <= 20)) {         // Austria, Włochy, Słowenia
+                return 'EUR';
+            }
+        }
+        
+        // USA: 25-50°N, 66-125°W
+        if (lat >= 24 && lat <= 50 && lng >= -125 && lng <= -66) {
+            return 'USD';
+        }
+        
+        // Domyślnie PLN dla powiatu europejskiego
+        return 'PLN';
     }
     
     /**
@@ -73,9 +169,51 @@ const App = (() => {
         // Ustawienia
         registerSettingsListeners();
         
+        // FAB Button - szybkie dodawanie transakcji
+        const fabBtn = document.getElementById('fabBtn');
+        if (fabBtn) {
+            fabBtn.addEventListener('click', handleFabClick);
+        }
+        
         // Status online
         window.addEventListener('online', handleOnlineStatusChange);
         window.addEventListener('offline', handleOnlineStatusChange);
+    }
+    
+    /**
+     * FLOATING ACTION BUTTON - FAB
+     */
+    
+    function handleFabClick() {
+        // Przejdź do ekranu dodawania transakcji
+        const ekranDodaj = document.getElementById('ekran-dodaj');
+        const ekranGlowny = document.getElementById('ekran-glowny');
+        
+        // Ukryj główny ekran
+        document.querySelectorAll('.ekran.active').forEach(el => {
+            el.classList.remove('active');
+        });
+        
+        // Pokaż ekran dodawania
+        if (ekranDodaj) {
+            ekranDodaj.classList.add('active');
+            
+            // Updatej nawigację
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.ekran === 'ekran-dodaj') {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Ustaw fokus na pole kwoty dla UX
+            setTimeout(() => {
+                const kwotaInput = document.getElementById('kwota');
+                if (kwotaInput) kwotaInput.focus();
+            }, 100);
+        }
+        
+        state.currentScreen = 'ekran-dodaj';
     }
     
     /**
@@ -128,6 +266,9 @@ const App = (() => {
         
         // Zaktualizuj wartości
         updateSummaryValues(summary);
+        
+        // Załaduj przegląd miesięczny
+        loadMonthlyOverview();
         
         // Załaduj ostatnie transakcje
         loadRecentTransactions();
@@ -200,6 +341,58 @@ const App = (() => {
     }
     
     /**
+     * Załaduj przegląd miesięczny
+     */
+    function loadMonthlyOverview() {
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        
+        // Pobierz transakcje za bieżący miesiąc
+        const transakcje = DB.getTransakcje();
+        
+        let monthlyIncome = 0;
+        let monthlyExpense = 0;
+        
+        transakcje.forEach(t => {
+            const tDate = new Date(t.data);
+            if (tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) {
+                if (t.typ === 'dochód') {
+                    monthlyIncome += t.kwota;
+                } else if (t.typ === 'wydatek') {
+                    monthlyExpense += t.kwota;
+                }
+            }
+        });
+        
+        const monthlySaldo = monthlyIncome - monthlyExpense;
+        
+        // Aktualizuj UI
+        const monthlyDateEl = document.getElementById('monthlyDate');
+        const monthlyIncomeEl = document.getElementById('monthlyIncome');
+        const monthlyExpenseEl = document.getElementById('monthlyExpense');
+        const monthlySaldoEl = document.getElementById('monthlySaldo');
+        
+        if (monthlyDateEl) {
+            const monthName = new Date(currentYear, currentMonth).toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' });
+            monthlyDateEl.textContent = monthName;
+        }
+        
+        if (monthlyIncomeEl) {
+            monthlyIncomeEl.textContent = monthlyIncome.toFixed(2) + ' zł';
+        }
+        
+        if (monthlyExpenseEl) {
+            monthlyExpenseEl.textContent = monthlyExpense.toFixed(2) + ' zł';
+        }
+        
+        if (monthlySaldoEl) {
+            monthlySaldoEl.textContent = monthlySaldo.toFixed(2) + ' zł';
+            monthlySaldoEl.style.color = monthlySaldo >= 0 ? 'var(--dochod-color)' : 'var(--wydatek-color)';
+        }
+    }
+    
+    /**
      * FORMULARZ - DODAWANIE TRANSAKCJI
      */
     
@@ -232,6 +425,9 @@ const App = (() => {
             
             // Odśwież dashboard
             refreshDashboard();
+            
+            // Sprawdź limit budżetu
+            Notifications.checkBudgetReminders();
             
             console.log('[App] Transakcja dodana:', transakcja);
         } catch (error) {
@@ -416,6 +612,38 @@ const App = (() => {
         if (limitWydatkow) limitWydatkow.addEventListener('change', saveSettings);
         if (waluty) waluty.addEventListener('change', saveSettings);
         
+        // Zarządzanie kategoriami
+        const addExpenseBtn = document.getElementById('addExpenseCategoryBtn');
+        const addIncomeBtn = document.getElementById('addIncomeCategoryBtn');
+        const newExpenseInput = document.getElementById('newExpenseCategory');
+        const newIncomeInput = document.getElementById('newIncomeCategory');
+        
+        if (addExpenseBtn) {
+            addExpenseBtn.addEventListener('click', () => addNewCategory('wydatki', newExpenseInput));
+        }
+        if (addIncomeBtn) {
+            addIncomeBtn.addEventListener('click', () => addNewCategory('dochody', newIncomeInput));
+        }
+        
+        if (newExpenseInput) {
+            newExpenseInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addNewCategory('wydatki', newExpenseInput);
+                }
+            });
+        }
+        
+        if (newIncomeInput) {
+            newIncomeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addNewCategory('dochody', newIncomeInput);
+                }
+            });
+        }
+        
+        // Załaduj kategorie
+        loadCategoriesUI();
+        
         // Eksport danych
         const exportBtn = document.getElementById('exportData');
         if (exportBtn) {
@@ -552,6 +780,89 @@ const App = (() => {
     }
     
     /**
+     * ZARZĄDZANIE KATEGORIAMI
+     */
+    
+    function loadCategoriesUI() {
+        const db = DB.getDatabase();
+        
+        // Załaduj wydatki
+        const wydatkiList = document.getElementById('kategorieWydatki');
+        if (wydatkiList && db.kategorie.wydatki) {
+            wydatkiList.innerHTML = db.kategorie.wydatki.map(cat => `
+                <div class="category-tag">
+                    <span>${cat}</span>
+                    <button class="remove-btn" onclick="App.removeCategory('wydatki', '${cat}')">×</button>
+                </div>
+            `).join('');
+        }
+        
+        // Załaduj dochody
+        const dochodList = document.getElementById('kategorieDochody');
+        if (dochodList && db.kategorie.dochody) {
+            dochodList.innerHTML = db.kategorie.dochody.map(cat => `
+                <div class="category-tag">
+                    <span>${cat}</span>
+                    <button class="remove-btn" onclick="App.removeCategory('dochody', '${cat}')">×</button>
+                </div>
+            `).join('');
+        }
+    }
+    
+    function addNewCategory(type, inputElement) {
+        const categoryName = inputElement.value.trim();
+        
+        // Walidacja
+        if (!categoryName) {
+            Notifications.warning('Puste pole', 'Wpisz nazwę kategorii');
+            return;
+        }
+        
+        if (categoryName.length < 2) {
+            Notifications.warning('Za krótka', 'Nazwa kategorii musi mieć co najmniej 2 znaki');
+            return;
+        }
+        
+        if (categoryName.length > 30) {
+            Notifications.warning('Za długa', 'Nazwa kategorii nie może mieć więcej niż 30 znaków');
+            return;
+        }
+        
+        // Dodaj kategorię
+        const success = DB.addCategory(type, categoryName);
+        
+        if (success) {
+            Notifications.success('Kategoria dodana', `"${categoryName}" została dodana`);
+            inputElement.value = '';
+            loadCategoriesUI();
+            
+            // Odśwież opcje w formularzu
+            updateCategories();
+        } else {
+            Notifications.error('Błąd', 'Kategoria już istnieje lub nie można jej dodać');
+        }
+    }
+    
+    // Publiczna funkcja do usuwania kategorii (wywoływana z HTML)
+    function removeCategory(type, categoryName) {
+        Notifications.confirm(
+            'Usuń kategorię',
+            `Czy chcesz usunąć kategorię "${categoryName}"?`,
+            () => {
+                const success = DB.removeCategory(type, categoryName);
+                
+                if (success) {
+                    Notifications.success('Usunięta', `Kategoria "${categoryName}" została usunięta`);
+                    loadCategoriesUI();
+                    updateCategories();
+                } else {
+                    Notifications.error('Błąd', 'Nie można usunąć tej kategorii');
+                }
+            }
+        );
+    }
+    
+    /**
      * Usuń wszystkie transakcje
      */
     function handleDeleteAllTransactions() {
@@ -607,9 +918,45 @@ const App = (() => {
         
         if (navigator.onLine) {
             Notifications.notifyOnlineMode();
+            // Synchronizuj dane gdy wrócimy do online
+            syncDataWhenOnline();
         } else {
             Notifications.notifyOfflineMode();
         }
+    }
+    
+    /**
+     * SYNCHRONIZACJA DANYCH
+     * Synchronizuje dane które były zmieniane w offline mode
+     */
+    
+    function syncDataWhenOnline() {
+        console.log('[App] Rozpoczynanie synchronizacji danych');
+        
+        // Sprawdzenie czy są pending changes (oznaczone w bazie)
+        const db = DB.getDatabase();
+        
+        // W naszym przypadku LocalStorage zawsze jest zsynchronizowany
+        // ale możemy dodać log dla śledzenia
+        const pendingChanges = db.transakcje.filter(t => t.pendingSync === true);
+        
+        if (pendingChanges.length > 0) {
+            console.log(`[App] Znaleziono ${pendingChanges.length} pending zmian do synchronizacji`);
+            
+            // Tutaj mogłabyśmy wysłać na serwer (jeśli by był)
+            // Na razie oznaczamy że dane są zsynchronizowane
+            pendingChanges.forEach(t => {
+                t.pendingSync = false;
+            });
+            
+            DB.saveDatabase(db);
+            Notifications.success('Synchronizacja', 'Dane zostały zsynchronizowane', { timeout: 3000 });
+        } else {
+            console.log('[App] Brak zmian do synchronizacji');
+        }
+        
+        // Odśwież dashboard po sync
+        refreshDashboard();
     }
     
     /**
@@ -650,7 +997,8 @@ const App = (() => {
     
     // Zwróć publiczne metody
     return {
-        init
+        init,
+        removeCategory  // Wystawiony do globalnego scope dla onclick w HTML
     };
 })();
 

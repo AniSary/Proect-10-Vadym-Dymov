@@ -410,6 +410,72 @@ const DB = (() => {
     }
     
     /**
+     * ZARZĄDZANIE KATEGORIAMI
+     */
+    
+    /**
+     * Dodaj nową kategorię
+     */
+    function addCategory(type, categoryName) {
+        try {
+            const db = getDatabase();
+            const categories = db.kategorie[type];
+            
+            // Normalizuj nazwę (lowercase dla porównania)
+            const normalized = categoryName.toLowerCase().trim();
+            
+            // Sprawdź czy już istnieje
+            if (categories.some(cat => cat.toLowerCase() === normalized)) {
+                console.log(`[DB] Kategoria "${categoryName}" już istnieje`);
+                return false;
+            }
+            
+            // Dodaj kategorię
+            categories.push(categoryName);
+            saveDatabase(db);
+            
+            console.log(`[DB] Kategoria "${categoryName}" dodana do "${type}"`);
+            return true;
+        } catch (error) {
+            console.error('[DB] Błąd dodawania kategorii:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Usuń kategorię
+     */
+    function removeCategory(type, categoryName) {
+        try {
+            const db = getDatabase();
+            const categories = db.kategorie[type];
+            
+            // Znaj kategorię i usuń
+            const index = categories.indexOf(categoryName);
+            if (index > -1) {
+                categories.splice(index, 1);
+                saveDatabase(db);
+                
+                console.log(`[DB] Kategoria "${categoryName}" usunięta z "${type}"`);
+                return true;
+            }
+            
+            return false;
+        } catch (error) {
+            console.error('[DB] Błąd usuwania kategorii:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Pobierz kategorię
+     */
+    function getCategories() {
+        const db = getDatabase();
+        return db.kategorie;
+    }
+    
+    /**
      * MIGRACJA DANYCH
      */
     
@@ -473,6 +539,10 @@ const DB = (() => {
         getSettings,
         saveSettings,
         updateSetting,
+        // Kategorie
+        addCategory,
+        removeCategory,
+        getCategories,
         // Eksport/Import
         exportToJSON,
         importFromJSON,

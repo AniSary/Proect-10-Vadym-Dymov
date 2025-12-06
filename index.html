@@ -26,6 +26,12 @@
 </head>
 <body>
     <a class="skip-link" href="#ekran-glowny">Przejdź do zawartości</a>
+    
+    <!-- Przycisk szybkiego dostępu (FAB) -->
+    <button id="fabBtn" class="fab-button" title="Dodaj transakcję" aria-label="Szybko dodaj transakcję">
+        <span class="fab-icon">➕</span>
+    </button>
+    
     <!-- Główny kontener aplikacji -->
     <div id="app" class="app-container">
         <!-- Nagłówek z tytułem -->
@@ -54,6 +60,30 @@
                         <div class="summary-card bilans">
                             <span class="summary-label">Bilans:</span>
                             <span class="summary-value" id="bilans">0,00 zł</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Przegląd bieżącego miesiąca -->
+                    <div class="monthly-overview">
+                        <div class="monthly-header">
+                            <h3>Przegląd tego miesiąca</h3>
+                            <span class="monthly-date" id="monthlyDate"></span>
+                        </div>
+                        <div class="monthly-stats">
+                            <div class="monthly-stat">
+                                <span class="stat-label">Dochody</span>
+                                <span class="stat-value income" id="monthlyIncome">0,00 zł</span>
+                            </div>
+                            <div class="monthly-stat divider"></div>
+                            <div class="monthly-stat">
+                                <span class="stat-label">Wydatki</span>
+                                <span class="stat-value expense" id="monthlyExpense">0,00 zł</span>
+                            </div>
+                            <div class="monthly-stat divider"></div>
+                            <div class="monthly-stat">
+                                <span class="stat-label">Saldo</span>
+                                <span class="stat-value" id="monthlySaldo">0,00 zł</span>
+                            </div>
                         </div>
                     </div>
                     
@@ -244,6 +274,34 @@
                                 <input type="checkbox" id="powiadomieniaLimitu" name="powiadomieniaLimitu" checked>
                                 Powiadomienia o limicie wydatków
                             </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Sekcja kategorii -->
+                    <div class="settings-section">
+                        <h3>Kategorie</h3>
+                        <div class="categories-management">
+                            <div class="category-group">
+                                <h4>Wydatki</h4>
+                                <div id="kategorieWydatki" class="category-list">
+                                    <!-- Kategorie będą załadowane tutaj -->
+                                </div>
+                                <div class="add-category-form">
+                                    <input type="text" id="newExpenseCategory" placeholder="Nowa kategoria wydatku" maxlength="30">
+                                    <button id="addExpenseCategoryBtn" class="btn btn-small">Dodaj</button>
+                                </div>
+                            </div>
+                            
+                            <div class="category-group">
+                                <h4>Dochody</h4>
+                                <div id="kategorieDochody" class="category-list">
+                                    <!-- Kategorie będą załadowane tutaj -->
+                                </div>
+                                <div class="add-category-form">
+                                    <input type="text" id="newIncomeCategory" placeholder="Nowa kategoria dochodu" maxlength="30">
+                                    <button id="addIncomeCategoryBtn" class="btn btn-small">Dodaj</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     

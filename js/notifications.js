@@ -319,6 +319,125 @@ const Notifications = (() => {
         }
     }
     
+    /**
+     * SYSTEM PRZYPOMINAŃ BUDŻETU
+     * Sprawdza czy użytkownik zbliża się do limitu wydatków
+     */
+    
+    let lastReminderCheck = 0;
+    const REMINDER_CHECK_INTERVAL = 60000; // Sprawdzaj co 1 minutę
+    const THRESHOLDS = [50, 75, 90, 100]; // Progi alertów w %
+    
+    function checkBudgetReminders() {
+        // Unikaj zbyt częstych sprawdzeń
+        const now = Date.now();
+        if (now - lastReminderCheck < REMINDER_CHECK_INTERVAL) {
+            return;
+        }
+        lastReminderCheck = now;
+        
+        // Sprawdź czy powiadomienia budżetu są włączone
+        const settings = DB.getSettings();
+        if (!settings.powiadomieniaLimitu) {
+            return;
+        }
+        
+        // Oblicz wydatki za bieżący miesiąc
+        const today = new Date();
+        const monthlyExpenses = calculateMonthlyExpenses(
+            today.getMonth(),
+            today.getFullYear()
+        );
+        
+        const limit = settings.limitWydatkow || 3000;
+        const percentage = (monthlyExpenses / limit) * 100;
+        
+        console.log(`[Reminders] Wydatki: ${monthlyExpenses.toFixed(2)} / ${limit.toFixed(2)} (${percentage.toFixed(1)}%)`);
+        
+        // Sprawdź czy osiągnął jakiś próg i wyślij powiadomienie
+        checkThresholdAndNotify(percentage, monthlyExpenses, limit);
+    }
+    
+    function calculateMonthlyExpenses(month, year) {
+        const db = DB.getDatabase();
+        let total = 0;
+        
+        db.transakcje.forEach(t => {
+            const transDate = new Date(t.data);
+            if (t.typ === 'wydatek' && 
+                transDate.getMonth() === month && 
+                transDate.getFullYear() === year) {
+                total += t.kwota;
+            }
+        });
+        
+        return total;
+    }
+    
+    function checkThresholdAndNotify(percentage, spent, limit) {
+        const reminderKey = `budget-reminder-${new Date().toDateString()}`;
+        const shownReminders = localStorage.getItem('budget-reminders') 
+            ? JSON.parse(localStorage.getItem('budget-reminders'))
+            : {};
+        
+        // Sprawdź każdy próg
+        THRESHOLDS.forEach(threshold => {
+            if (percentage >= threshold) {
+                const key = `${reminderKey}-${threshold}`;
+                
+                // Pokaż powiadomienie tylko raz dziennie na próg
+                if (!shownReminders[key]) {
+                    if (percentage >= 100) {
+                        // Krytyczne - przekroczony limit
+                        showBudgetExceededNotification(spent, limit);
+                    } else if (percentage >= 90) {
+                        // Ostrzeżenie - prawie limit
+                        showBudgetWarningNotification(percentage, spent, limit);
+                    } else if (percentage >= 75) {
+                        // Info - sporo wydanych
+                        showBudgetInfoNotification(percentage, spent, limit);
+                    }
+                    
+                    // Zapamiętaj że pokazaliśmy to powiadomienie
+                    shownReminders[key] = true;
+                    localStorage.setItem('budget-reminders', JSON.stringify(shownReminders));
+                }
+            }
+        });
+    }
+    
+    function showBudgetExceededNotification(spent, limit) {
+        const message = `Przekroczyłeś limit budżetu! Wydałeś ${spent.toFixed(2)} zł z limitu ${limit.toFixed(2)} zł`;
+        
+        // Powiadomienie w UI
+        warning('⚠️ Limit przekroczony', message, { timeout: 0 });
+        
+        // Push notification
+        showSystemNotification('Finansowy Tracker - Limit przekroczony', {
+            body: message,
+            tag: 'budget-exceeded',
+            requireInteraction: true
+        });
+    }
+    
+    function showBudgetWarningNotification(percentage, spent, limit) {
+        const message = `Bliski końcowi budżetu! Wydałeś ${percentage.toFixed(0)}% limitu (${spent.toFixed(2)} zł z ${limit.toFixed(2)} zł)`;
+        
+        warning('⚠️ Prawie limit', message, { timeout: 5000 });
+        
+        showSystemNotification('Finansowy Tracker - Prawie limit', {
+            body: `Wydałeś ${percentage.toFixed(0)}% budżetu`,
+            tag: 'budget-warning',
+            badge: '/myapp/icons/icon-96.png'
+        });
+    }
+    
+    function showBudgetInfoNotification(percentage, spent, limit) {
+        const message = `Wydałeś już ${percentage.toFixed(0)}% budżetu (${spent.toFixed(2)} zł)`;
+        
+        info('💡 Przegląd budżetu', message, { timeout: 5000 });
+    }
+    
     // Zwróć publiczne metody
     return {
         // Metody podstawowe
@@ -345,7 +464,9 @@ const Notifications = (() => {
         notifyOnlineMode,
         // System Notifications
         requestNotificationPermission,
-        showSystemNotification
+        showSystemNotification,
+        // Budget Reminders
+        checkBudgetReminders
     };
 })();
 
