@@ -880,6 +880,20 @@ const App = (() => {
         }
     }
     
+    // Handler dla HTML onclick
+    function handleAddExpenseCategory() {
+        console.log('[App] handleAddExpenseCategory wywołane');
+        const input = document.getElementById('newExpenseCategory');
+        if (input) addNewCategory('wydatki', input);
+    }
+    
+    // Handler dla HTML onclick
+    function handleAddIncomeCategory() {
+        console.log('[App] handleAddIncomeCategory wywołane');
+        const input = document.getElementById('newIncomeCategory');
+        if (input) addNewCategory('dochody', input);
+    }
+    
     // Publiczna funkcja do usuwania kategorii (wywoływana z HTML)
     function removeCategory(type, categoryName) {
         Notifications.confirm(
@@ -1036,7 +1050,9 @@ const App = (() => {
     return {
         init,
         removeCategory,  // Wystawiony do globalnego scope dla onclick w HTML
-        addNewCategory   // Wystawiony do globalnego scope
+        addNewCategory,  // Wystawiony do globalnego scope
+        handleAddExpenseCategory,  // Handler dla przycisków
+        handleAddIncomeCategory    // Handler dla przycisków
     };
 })();
 
