@@ -799,12 +799,22 @@ const App = (() => {
     function loadCategoriesUI() {
         const db = DB.getDatabase();
         
+        // Helper do emoji
+        const getEmoji = (cat) => {
+            const emojis = {
+                'jedzenie': '🍔', 'transport': '🚗', 'rozrywka': '🎬', 'zdrowie': '⚕️',
+                'edukacja': '📚', 'inne': '📦', 'wyplata': '💼', 'premia': '🎁',
+                'inwestycje': '📈', 'inne-dochod': '📦'
+            };
+            return emojis[cat] || '💰';
+        };
+        
         // Załaduj wydatki
         const wydatkiList = document.getElementById('kategorieWydatki');
         if (wydatkiList && db.kategorie.wydatki) {
             wydatkiList.innerHTML = db.kategorie.wydatki.map(cat => `
                 <div class="category-tag">
-                    <span>${cat}</span>
+                    <span>${getEmoji(cat)} ${cat}</span>
                     <button class="remove-btn" onclick="App.removeCategory('wydatki', '${cat}')">×</button>
                 </div>
             `).join('');
@@ -815,7 +825,7 @@ const App = (() => {
         if (dochodList && db.kategorie.dochody) {
             dochodList.innerHTML = db.kategorie.dochody.map(cat => `
                 <div class="category-tag">
-                    <span>${cat}</span>
+                    <span>${getEmoji(cat)} ${cat}</span>
                     <button class="remove-btn" onclick="App.removeCategory('dochody', '${cat}')">×</button>
                 </div>
             `).join('');
@@ -823,7 +833,7 @@ const App = (() => {
     }
     
     function addNewCategory(type, inputElement) {
-        const categoryName = inputElement.value.trim();
+        const categoryName = inputElement.value.trim().toLowerCase();
         
         // Walidacja
         if (!categoryName) {
@@ -840,6 +850,14 @@ const App = (() => {
             Notifications.warning('Za długa', 'Nazwa kategorii nie może mieć więcej niż 30 znaków');
             return;
         }
+        
+        // Sprawdź czy to nie liczby (case z inputu)
+        if (/^\d+$/.test(categoryName)) {
+            Notifications.warning('Błąd', 'Nazwa kategorii nie może być tylko liczbami');
+            return;
+        }
+        
+        console.log(`[App] Dodawanie kategorii: "${categoryName}" do typu "${type}"`);
         
         // Dodaj kategorię
         const success = DB.addCategory(type, categoryName);
