@@ -446,41 +446,37 @@ const App = (() => {
         if (!typSelect || !kategoriaSelect) return;
         
         const typ = typSelect.value;
+        const db = DB.getDatabase();
         
         // Wyczyść opcje
         kategoriaSelect.innerHTML = '<option value="">-- Wybierz kategorię --</option>';
         
+        // Pobierz kategorie z bazy danych
+        let categories = [];
+        
         if (typ === 'wydatek') {
-            const kategoriesWydatki = [
-                { value: 'jedzenie', text: '🍔 Jedzenie' },
-                { value: 'transport', text: '🚗 Transport' },
-                { value: 'rozrywka', text: '🎬 Rozrywka' },
-                { value: 'zdrowie', text: '⚕️ Zdrowie' },
-                { value: 'edukacja', text: '📚 Edukacja' },
-                { value: 'inne', text: '📦 Inne' }
-            ];
-            
-            kategoriesWydatki.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat.value;
-                option.textContent = cat.text;
-                kategoriaSelect.appendChild(option);
-            });
+            categories = db.kategorie.wydatki || [];
         } else if (typ === 'dochód') {
-            const categoriesDochody = [
-                { value: 'wyplata', text: '💼 Wypłata' },
-                { value: 'premia', text: '🎁 Premia' },
-                { value: 'inwestycje', text: '📈 Inwestycje' },
-                { value: 'inne-dochod', text: '📦 Inne' }
-            ];
-            
-            categoriesDochody.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat.value;
-                option.textContent = cat.text;
-                kategoriaSelect.appendChild(option);
-            });
+            categories = db.kategorie.dochody || [];
         }
+        
+        // Helper do emoji
+        const getEmoji = (cat) => {
+            const emojis = {
+                'jedzenie': '🍔', 'transport': '🚗', 'rozrywka': '🎬', 'zdrowie': '⚕️',
+                'edukacja': '📚', 'inne': '📦', 'wyplata': '💼', 'premia': '🎁',
+                'inwestycje': '📈', 'inne-dochod': '📦'
+            };
+            return emojis[cat] || '💰';
+        };
+        
+        // Dodaj kategorie do selecta
+        categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = `${getEmoji(cat)} ${cat}`;
+            kategoriaSelect.appendChild(option);
+        });
     }
     
     /**
