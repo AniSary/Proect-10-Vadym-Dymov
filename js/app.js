@@ -612,28 +612,41 @@ const App = (() => {
         if (limitWydatkow) limitWydatkow.addEventListener('change', saveSettings);
         if (waluty) waluty.addEventListener('change', saveSettings);
         
-        // Zarządzanie kategoriami
-        const addExpenseBtn = document.getElementById('addExpenseCategoryBtn');
-        const addIncomeBtn = document.getElementById('addIncomeCategoryBtn');
-        const newExpenseInput = document.getElementById('newExpenseCategory');
-        const newIncomeInput = document.getElementById('newIncomeCategory');
+        // Zarządzanie kategoriami - Event delegation na poziomie dokumentu
+        const settingsContainer = document.getElementById('ekran-ustawienia');
         
         // Załaduj kategorie na początek
         loadCategoriesUI();
         
-        // Event delegation dla przycisków "Dodaj"
-        document.addEventListener('click', (e) => {
-            if (e.target && e.target.id === 'addExpenseCategoryBtn') {
-                console.log('[App] Kliknieto Dodaj wydatki');
-                addNewCategory('wydatki', newExpenseInput);
-            }
-            if (e.target && e.target.id === 'addIncomeCategoryBtn') {
-                console.log('[App] Kliknieto Dodaj dochody');
-                addNewCategory('dochody', newIncomeInput);
-            }
-        });
+        // Delegacja zdarzeń - słuchamy na całym dokumencie
+        setTimeout(() => {
+            const newExpenseInput = document.getElementById('newExpenseCategory');
+            const newIncomeInput = document.getElementById('newIncomeCategory');
+            
+            document.addEventListener('click', function handler(e) {
+                const addExpenseBtn = document.getElementById('addExpenseCategoryBtn');
+                const addIncomeBtn = document.getElementById('addIncomeCategoryBtn');
+                
+                if (e.target === addExpenseBtn || e.target?.parentElement === addExpenseBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[App] KLIK: Dodaj wydatki');
+                    if (newExpenseInput) addNewCategory('wydatki', newExpenseInput);
+                }
+                
+                if (e.target === addIncomeBtn || e.target?.parentElement === addIncomeBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[App] KLIK: Dodaj dochody');
+                    if (newIncomeInput) addNewCategory('dochody', newIncomeInput);
+                }
+            });
+        }, 100);
         
         // Enter key support
+        const newExpenseInput = document.getElementById('newExpenseCategory');
+        const newIncomeInput = document.getElementById('newIncomeCategory');
+        
         if (newExpenseInput) {
             newExpenseInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
