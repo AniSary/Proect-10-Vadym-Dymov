@@ -418,21 +418,37 @@ const DB = (() => {
      */
     function addCategory(type, categoryName) {
         try {
+            console.log(`[DB.addCategory] Start: type="${type}", categoryName="${categoryName}"`);
+            
             const db = getDatabase();
+            console.log(`[DB.addCategory] DB kategorie:`, db.kategorie);
+            
             const categories = db.kategorie[type];
+            console.log(`[DB.addCategory] Categories dla type="${type}":`, categories);
+            
+            if (!categories) {
+                console.error(`[DB.addCategory] Nie ma kategorii dla type="${type}"`);
+                return false;
+            }
             
             // Normalizuj nazwę (lowercase dla porównania)
             const normalized = categoryName.toLowerCase().trim();
             
             // Sprawdź czy już istnieje
-            if (categories.some(cat => cat.toLowerCase() === normalized)) {
+            const exists = categories.some(cat => cat.toLowerCase() === normalized);
+            console.log(`[DB.addCategory] Czy istnieje "${normalized}"?`, exists);
+            
+            if (exists) {
                 console.log(`[DB] Kategoria "${categoryName}" już istnieje`);
                 return false;
             }
             
             // Dodaj kategorię
             categories.push(categoryName);
-            saveDatabase(db);
+            console.log(`[DB.addCategory] Po dodaniu:`, categories);
+            
+            const saved = saveDatabase(db);
+            console.log(`[DB.addCategory] Zapisano do DB:`, saved);
             
             console.log(`[DB] Kategoria "${categoryName}" dodana do "${type}"`);
             return true;

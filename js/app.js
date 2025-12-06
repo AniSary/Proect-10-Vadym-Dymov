@@ -618,26 +618,22 @@ const App = (() => {
         const newExpenseInput = document.getElementById('newExpenseCategory');
         const newIncomeInput = document.getElementById('newIncomeCategory');
         
-        console.log('[App] Szukam przycisków kategorii:', {
-            addExpenseBtn: !!addExpenseBtn,
-            addIncomeBtn: !!addIncomeBtn,
-            newExpenseInput: !!newExpenseInput,
-            newIncomeInput: !!newIncomeInput
-        });
+        // Załaduj kategorie na początek
+        loadCategoriesUI();
         
-        if (addExpenseBtn) {
-            addExpenseBtn.addEventListener('click', () => {
+        // Event delegation dla przycisków "Dodaj"
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'addExpenseCategoryBtn') {
                 console.log('[App] Kliknieto Dodaj wydatki');
                 addNewCategory('wydatki', newExpenseInput);
-            });
-        }
-        if (addIncomeBtn) {
-            addIncomeBtn.addEventListener('click', () => {
+            }
+            if (e.target && e.target.id === 'addIncomeCategoryBtn') {
                 console.log('[App] Kliknieto Dodaj dochody');
                 addNewCategory('dochody', newIncomeInput);
-            });
-        }
+            }
+        });
         
+        // Enter key support
         if (newExpenseInput) {
             newExpenseInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
@@ -653,9 +649,6 @@ const App = (() => {
                 }
             });
         }
-        
-        // Załaduj kategorie
-        loadCategoriesUI();
         
         // Eksport danych
         const exportBtn = document.getElementById('exportData');
