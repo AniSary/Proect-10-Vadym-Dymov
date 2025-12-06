@@ -1063,4 +1063,17 @@ if (document.readyState === 'loading') {
     App.init();
 }
 
+// Globalne функции для HTML onclick
+window.App.handleAddExpenseCategory = function() {
+    console.log('[Global] handleAddExpenseCategory');
+    const input = document.getElementById('newExpenseCategory');
+    if (input) App.addNewCategory('wydatki', input);
+};
+
+window.App.handleAddIncomeCategory = function() {
+    console.log('[Global] handleAddIncomeCategory');
+    const input = document.getElementById('newIncomeCategory');
+    if (input) App.addNewCategory('dochody', input);
+};
+
 console.log('[App] Moduł załadowany');
