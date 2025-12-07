@@ -1045,41 +1045,47 @@ const App = (() => {
     // Zwróć publiczne metody
     return {
         init,
-        removeCategory,  // Wystawiony do globalnego scope dla onclick w HTML
-        addNewCategory,  // Wystawiony do globalnego scope
-        handleAddExpenseCategory,  // Handler dla przycisków
-        handleAddIncomeCategory    // Handler dla przycisków
+        removeCategory,
+        addNewCategory,
+        handleAddExpenseCategory,
+        handleAddIncomeCategory
     };
 })();
 
-// Inicjalizuj aplikację po załadowaniu DOM
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        // Ustaw globalne handlery
-        setupGlobalHandlers();
-        App.init();
-    });
-} else {
-    setupGlobalHandlers();
-    App.init();
-}
-
-// Funkcja do ustawienia globalnych handlerów
-function setupGlobalHandlers() {
+// Asynchronicznie ustaw globalne handlery po załadowaniu DOM
+document.addEventListener('DOMContentLoaded', function setupGlobalHandlers() {
+    console.log('[Setup] Ustawianie globalnych handlerów...');
+    
     // Ustaw globalne funkcje dla HTML onclick
     window.App.handleAddExpenseCategory = function() {
         console.log('[Global] handleAddExpenseCategory');
         const input = document.getElementById('newExpenseCategory');
-        if (input) App.addNewCategory('wydatki', input);
+        if (input && App.addNewCategory) {
+            App.addNewCategory('wydatki', input);
+        }
     };
 
     window.App.handleAddIncomeCategory = function() {
         console.log('[Global] handleAddIncomeCategory');
         const input = document.getElementById('newIncomeCategory');
-        if (input) App.addNewCategory('dochody', input);
+        if (input && App.addNewCategory) {
+            App.addNewCategory('dochody', input);
+        }
     };
     
-    console.log('[Global] Handlery zostały ustawione');
+    // Ustaw removeCategory handler
+    window.App.removeCategory = App.removeCategory;
+    
+    console.log('[Setup] Globalne handlery ustawione');
+    console.log('[Setup] window.App.handleAddExpenseCategory:', typeof window.App.handleAddExpenseCategory);
+    console.log('[Setup] window.App.handleAddIncomeCategory:', typeof window.App.handleAddIncomeCategory);
+});
+
+// Inicjalizuj aplikację
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', App.init);
+} else {
+    App.init();
 }
 
 console.log('[App] Moduł załadowany');
