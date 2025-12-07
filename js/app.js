@@ -1054,22 +1054,32 @@ const App = (() => {
 
 // Inicjalizuj aplikację po załadowaniu DOM
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', App.init);
+    document.addEventListener('DOMContentLoaded', () => {
+        // Ustaw globalne handlery
+        setupGlobalHandlers();
+        App.init();
+    });
 } else {
+    setupGlobalHandlers();
     App.init();
 }
 
-// Globalne функции для HTML onclick
-window.App.handleAddExpenseCategory = function() {
-    console.log('[Global] handleAddExpenseCategory');
-    const input = document.getElementById('newExpenseCategory');
-    if (input) App.addNewCategory('wydatki', input);
-};
+// Funkcja do ustawienia globalnych handlerów
+function setupGlobalHandlers() {
+    // Ustaw globalne funkcje dla HTML onclick
+    window.App.handleAddExpenseCategory = function() {
+        console.log('[Global] handleAddExpenseCategory');
+        const input = document.getElementById('newExpenseCategory');
+        if (input) App.addNewCategory('wydatki', input);
+    };
 
-window.App.handleAddIncomeCategory = function() {
-    console.log('[Global] handleAddIncomeCategory');
-    const input = document.getElementById('newIncomeCategory');
-    if (input) App.addNewCategory('dochody', input);
-};
+    window.App.handleAddIncomeCategory = function() {
+        console.log('[Global] handleAddIncomeCategory');
+        const input = document.getElementById('newIncomeCategory');
+        if (input) App.addNewCategory('dochody', input);
+    };
+    
+    console.log('[Global] Handlery zostały ustawione');
+}
 
 console.log('[App] Moduł załadowany');
