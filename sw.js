@@ -3,10 +3,10 @@
  * Zapewnia offline functionality i cachowanie zasobów
  */
 
-// Nazwa cache'u - zmień wersję, aby wymusić aktualizację
-const CACHE_NAME = 'finansowy-tracker-v1.0.0';
-const RUNTIME_CACHE = 'finansowy-tracker-runtime-v1.0.0';
-const IMAGE_CACHE = 'finansowy-tracker-images-v1.0.0';
+// Название кэша - измените версию, чтобы принудительно обновить кэш
+const CACHE_NAME = 'finansowy-tracker-v1.1.0';
+const RUNTIME_CACHE = 'finansowy-tracker-runtime-v1.1.0';
+const IMAGE_CACHE = 'finansowy-tracker-images-v1.1.0';
 
 // Zasoby do cachowania przy instalacji Service Workera
 const ASSETS_TO_CACHE = [
