@@ -640,7 +640,9 @@ a:hover {
 }
 
 .chart-canvas {
-    max-height: 300px;
+    max-height: 350px;
+    width: 100% !important;
+    height: auto !important;
     display: block;
     margin: 0 auto;
 }

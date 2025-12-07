@@ -117,11 +117,23 @@
     .categories-table {
         padding: var(--spacing-md);
         font-size: var(--font-size-sm);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
-    
+
+    /* Ensure table has a minimum width so horizontal scroll works nicely on very small screens */
+    .categories-table table {
+        min-width: 300px;
+    }
+
     table th,
     table td {
-        padding: var(--spacing-sm);
+        padding: var(--spacing-xs);
+        font-size: var(--font-size-xs);
+    }
+
+    table th {
+        white-space: nowrap;
     }
     
     /* Ustawienia */
