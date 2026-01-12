@@ -4,6 +4,11 @@
  */
 
 const App = (() => {
+    // Stałe konfiguracyjne
+    const GEOLOCATION_TIMEOUT = 5000; // 5 sekund na geolokację
+    const GEOLOCATION_MAX_AGE = 3600000; // 1 godzina cache geolokacji
+    const BUDGET_WARNING_THRESHOLD = 0.8; // 80% limitu
+
     // Zmienna stanu
     let state = {
         currentScreen: 'ekran-glowny',
@@ -66,7 +71,7 @@ const App = (() => {
         navigator.geolocation.getCurrentPosition(
             (position) => handleGeolocationSuccess(position),
             (error) => handleGeolocationError(error),
-            { timeout: 5000, maximumAge: 3600000 } // 5s timeout, cache 1h
+            { timeout: GEOLOCATION_TIMEOUT, maximumAge: GEOLOCATION_MAX_AGE }
         );
     }
     
@@ -299,30 +304,58 @@ const App = (() => {
     function loadRecentTransactions() {
         const listaElement = document.getElementById('listaTransakcji');
         if (!listaElement) return;
-        
+
         const transakcje = DB.getTransakcje().slice(0, 10);
-        
+
+        // Wyczyść istniejącą zawartość
+        listaElement.innerHTML = '';
+
         if (transakcje.length === 0) {
-            listaElement.innerHTML = '<p class="empty-state">Brak transakcji. Dodaj nową!</p>';
+            const emptyState = document.createElement('p');
+            emptyState.className = 'empty-state';
+            emptyState.textContent = 'Brak transakcji. Dodaj nową!';
+            listaElement.appendChild(emptyState);
             return;
         }
-        
-        listaElement.innerHTML = transakcje.map(t => {
+
+        transakcje.forEach(t => {
             const data = new Date(t.data).toLocaleDateString('pl-PL');
             const kategoria = getCategoryName(t.kategoria);
             const emoji = getCategoryEmoji(t.kategoria);
-            
-            return `
-                <div class="transaction-item ${t.typ}">
-                    <div class="transaction-info">
-                        <div class="transaction-category">${emoji} ${kategoria}</div>
-                        <div class="transaction-date">${data}</div>
-                        ${t.opis ? `<div class="transaction-note">${t.opis}</div>` : ''}
-                    </div>
-                    <div class="transaction-amount ${t.typ}">${t.kwota.toFixed(2)} zł</div>
-                </div>
-            `;
-        }).join('');
+
+            const transactionItem = document.createElement('div');
+            transactionItem.className = `transaction-item ${t.typ}`;
+
+            const transactionInfo = document.createElement('div');
+            transactionInfo.className = 'transaction-info';
+
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'transaction-category';
+            categoryDiv.textContent = `${emoji} ${kategoria}`;
+
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'transaction-date';
+            dateDiv.textContent = data;
+
+            transactionInfo.appendChild(categoryDiv);
+            transactionInfo.appendChild(dateDiv);
+
+            if (t.opis) {
+                const noteDiv = document.createElement('div');
+                noteDiv.className = 'transaction-note';
+                noteDiv.textContent = t.opis;
+                transactionInfo.appendChild(noteDiv);
+            }
+
+            const amountDiv = document.createElement('div');
+            amountDiv.className = `transaction-amount ${t.typ}`;
+            amountDiv.textContent = `${t.kwota.toFixed(2)} zł`;
+
+            transactionItem.appendChild(transactionInfo);
+            transactionItem.appendChild(amountDiv);
+
+            listaElement.appendChild(transactionItem);
+        });
     }
     
     /**
@@ -334,7 +367,7 @@ const App = (() => {
         
         if (settings.powiadomieniaLimitu && summary.wydatki > limit) {
             Notifications.notifyLimitExceeded(summary.wydatki, limit);
-        } else if (settings.powiadomieniaLimitu && summary.wydatki > limit * 0.8) {
+        } else if (settings.powiadomieniaLimitu && summary.wydatki > limit * BUDGET_WARNING_THRESHOLD) {
             const procent = Math.round((summary.wydatki / limit) * 100);
             Notifications.notifyLimitThreshold(procent);
         }
@@ -442,24 +475,30 @@ const App = (() => {
     function updateCategories() {
         const typSelect = document.getElementById('typ');
         const kategoriaSelect = document.getElementById('kategoria');
-        
+
         if (!typSelect || !kategoriaSelect) return;
-        
+
         const typ = typSelect.value;
         const db = DB.getDatabase();
-        
+
         // Wyczyść opcje
-        kategoriaSelect.innerHTML = '<option value="">-- Wybierz kategorię --</option>';
-        
+        kategoriaSelect.innerHTML = '';
+
+        // Dodaj domyślną opcję
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = '-- Wybierz kategorię --';
+        kategoriaSelect.appendChild(defaultOption);
+
         // Pobierz kategorie z bazy danych
         let categories = [];
-        
+
         if (typ === 'wydatek') {
             categories = db.kategorie.wydatki || [];
         } else if (typ === 'dochód') {
             categories = db.kategorie.dochody || [];
         }
-        
+
         // Helper do emoji
         const getEmoji = (cat) => {
             const emojis = {
@@ -469,7 +508,7 @@ const App = (() => {
             };
             return emojis[cat] || '💰';
         };
-        
+
         // Dodaj kategorie do selecta
         categories.forEach(cat => {
             const option = document.createElement('option');
@@ -559,26 +598,44 @@ const App = (() => {
     function loadCategoriesTable(stats) {
         const tbody = document.getElementById('tabelaKategoriiBody');
         if (!tbody) return;
-        
+
+        // Wyczyść istniejącą zawartość
+        tbody.innerHTML = '';
+
         if (stats.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Brak danych</td></tr>';
+            const emptyRow = document.createElement('tr');
+            emptyRow.className = 'empty-row';
+            const emptyCell = document.createElement('td');
+            emptyCell.setAttribute('colspan', '3');
+            emptyCell.textContent = 'Brak danych';
+            emptyRow.appendChild(emptyCell);
+            tbody.appendChild(emptyRow);
             return;
         }
-        
+
         const totalKwota = stats.reduce((sum, s) => sum + s.kwota, 0);
-        
-        tbody.innerHTML = stats.map(s => {
+
+        stats.forEach(s => {
             const procent = ((s.kwota / totalKwota) * 100).toFixed(1);
             const emoji = getCategoryEmoji(s.kategoria);
-            
-            return `
-                <tr>
-                    <td>${emoji} ${getCategoryName(s.kategoria)}</td>
-                    <td>${s.kwota.toFixed(2)} zł</td>
-                    <td>${procent}%</td>
-                </tr>
-            `;
-        }).join('');
+
+            const row = document.createElement('tr');
+
+            const categoryCell = document.createElement('td');
+            categoryCell.textContent = `${emoji} ${getCategoryName(s.kategoria)}`;
+
+            const amountCell = document.createElement('td');
+            amountCell.textContent = `${s.kwota.toFixed(2)} zł`;
+
+            const percentCell = document.createElement('td');
+            percentCell.textContent = `${procent}%`;
+
+            row.appendChild(categoryCell);
+            row.appendChild(amountCell);
+            row.appendChild(percentCell);
+
+            tbody.appendChild(row);
+        });
     }
     
     /**
@@ -772,14 +829,35 @@ const App = (() => {
     function handleImport(event) {
         const file = event.target.files[0];
         if (!file) return;
-        
+
+        // Walidacja typu pliku
+        if (!file.name.endsWith('.json')) {
+            Notifications.notifyError('Błąd importu', 'Wybierz plik JSON');
+            return;
+        }
+
+        // Walidacja rozmiaru pliku (max 10MB)
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+        if (file.size > MAX_FILE_SIZE) {
+            Notifications.notifyError('Błąd importu', 'Plik jest zbyt duży (maksymalnie 10MB)');
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const json = e.target.result;
-                DB.importFromJSON(json);
-                
+
+                // Walidacja JSON
                 const data = JSON.parse(json);
+
+                // Walidacja struktury danych
+                if (!data.database || !Array.isArray(data.database.transakcje)) {
+                    throw new Error('Nieprawidłowa struktura pliku JSON');
+                }
+
+                DB.importFromJSON(json);
+
                 const iloscTransakcji = data.database.transakcje.length;
                 
                 Notifications.notifyImported(iloscTransakcji);
@@ -800,7 +878,7 @@ const App = (() => {
     
     function loadCategoriesUI() {
         const db = DB.getDatabase();
-        
+
         // Helper do emoji
         const getEmoji = (cat) => {
             const emojis = {
@@ -810,27 +888,55 @@ const App = (() => {
             };
             return emojis[cat] || '💰';
         };
-        
+
         // Załaduj wydatki
         const wydatkiList = document.getElementById('kategorieWydatki');
         if (wydatkiList && db.kategorie.wydatki) {
-            wydatkiList.innerHTML = db.kategorie.wydatki.map(cat => `
-                <div class="category-tag">
-                    <span>${getEmoji(cat)} ${cat}</span>
-                    <button class="remove-btn" onclick="App.removeCategory('wydatki', '${cat}')">×</button>
-                </div>
-            `).join('');
+            // Wyczyść istniejącą zawartość
+            wydatkiList.innerHTML = '';
+
+            db.kategorie.wydatki.forEach(cat => {
+                const categoryTag = document.createElement('div');
+                categoryTag.className = 'category-tag';
+
+                const span = document.createElement('span');
+                span.textContent = `${getEmoji(cat)} ${cat}`;
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = () => removeCategory('wydatki', cat);
+
+                categoryTag.appendChild(span);
+                categoryTag.appendChild(removeBtn);
+
+                wydatkiList.appendChild(categoryTag);
+            });
         }
-        
+
         // Załaduj dochody
         const dochodList = document.getElementById('kategorieDochody');
         if (dochodList && db.kategorie.dochody) {
-            dochodList.innerHTML = db.kategorie.dochody.map(cat => `
-                <div class="category-tag">
-                    <span>${getEmoji(cat)} ${cat}</span>
-                    <button class="remove-btn" onclick="App.removeCategory('dochody', '${cat}')">×</button>
-                </div>
-            `).join('');
+            // Wyczyść istniejącą zawartość
+            dochodList.innerHTML = '';
+
+            db.kategorie.dochody.forEach(cat => {
+                const categoryTag = document.createElement('div');
+                categoryTag.className = 'category-tag';
+
+                const span = document.createElement('span');
+                span.textContent = `${getEmoji(cat)} ${cat}`;
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = () => removeCategory('dochody', cat);
+
+                categoryTag.appendChild(span);
+                categoryTag.appendChild(removeBtn);
+
+                dochodList.appendChild(categoryTag);
+            });
         }
     }
     

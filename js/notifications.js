@@ -4,8 +4,18 @@
  */
 
 const Notifications = (() => {
+    // Stałe konfiguracyjne
     const NOTIFICATION_TIMEOUT = 5000; // 5 sekund
     const MAX_NOTIFICATIONS = 3; // Maksymalnie 3 powiadomienia na raz
+    const GEOLOCATION_TIMEOUT = 5000; // 5 sekund na geolokację
+    const GEOLOCATION_MAX_AGE = 3600000; // 1 godzina cache geolokacji
+
+    // Ścieżki do ikon
+    const ICON_PATH_192 = '/myapp/icons/icon-192.png';
+    const ICON_PATH_96 = '/myapp/icons/icon-96.png';
+
+    // Limity budżetowe
+    const BUDGET_WARNING_THRESHOLD = 0.8; // 80% limitu
     
     /**
      * Wyświetl powiadomienie
@@ -23,18 +33,34 @@ const Notifications = (() => {
         // Utwórz element powiadomienia
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
-        notification.innerHTML = `
-            <div class="notification-content">
-                <div class="notification-title">${escapeHtml(title)}</div>
-                <div class="notification-message">${escapeHtml(message)}</div>
-            </div>
-            <button class="notification-close" aria-label="Zamknij powiadomienie">✕</button>
-        `;
+
+        // Utwórz zawartość powiadomienia
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'notification-content';
+
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'notification-title';
+        titleDiv.textContent = title;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'notification-message';
+        messageDiv.textContent = message;
+
+        contentDiv.appendChild(titleDiv);
+        contentDiv.appendChild(messageDiv);
+
+        // Utwórz przycisk zamknięcia
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'notification-close';
+        closeBtn.setAttribute('aria-label', 'Zamknij powiadomienie');
+        closeBtn.textContent = '✕';
+
+        notification.appendChild(contentDiv);
+        notification.appendChild(closeBtn);
         
         container.appendChild(notification);
         
         // Dodaj event listener do przycisku zamknięcia
-        const closeBtn = notification.querySelector('.notification-close');
         closeBtn.addEventListener('click', () => removeNotification(notification));
         
         // Automatyczne usunięcie po timeout
@@ -158,19 +184,7 @@ const Notifications = (() => {
         return show(type, '', message, { timeout: 3000 });
     }
     
-    /**
-     * Bezpieczne escape'owanie HTML
-     */
-    function escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, m => map[m]);
-    }
+
     
     /**
      * Powiadomienia Business Logic
@@ -312,8 +326,8 @@ const Notifications = (() => {
     function showSystemNotification(title, options = {}) {
         if ('Notification' in window && Notification.permission === 'granted') {
             return new Notification(title, {
-                icon: '/myapp/icons/icon-192.png',
-                badge: '/myapp/icons/icon-96.png',
+                icon: ICON_PATH_192,
+                badge: ICON_PATH_96,
                 ...options
             });
         }
@@ -428,7 +442,7 @@ const Notifications = (() => {
         showSystemNotification('Finansowy Tracker - Prawie limit', {
             body: `Wydałeś ${percentage.toFixed(0)}% budżetu`,
             tag: 'budget-warning',
-            badge: '/myapp/icons/icon-96.png'
+            badge: ICON_PATH_96
         });
     }
     

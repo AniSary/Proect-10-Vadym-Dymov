@@ -3,10 +3,12 @@
  * Zapewnia offline functionality i cachowanie zasobów
  */
 
-// Название кэша - измените версию, чтобы принудительно обновить кэш
+// Stałe konfiguracyjne
 const CACHE_NAME = 'finansowy-tracker-v1.1.0';
 const RUNTIME_CACHE = 'finansowy-tracker-runtime-v1.1.0';
 const IMAGE_CACHE = 'finansowy-tracker-images-v1.1.0';
+const ICON_PATH_192 = '/myapp/icons/icon-192.png';
+const ICON_PATH_96 = '/myapp/icons/icon-96.png';
 
 // Zasoby do cachowania przy instalacji Service Workera
 const ASSETS_TO_CACHE = [
@@ -19,7 +21,7 @@ const ASSETS_TO_CACHE = [
     '/myapp/js/charts.js',
     '/myapp/js/notifications.js',
     '/myapp/manifest.json',
-    '/myapp/icons/icon-192.png',
+    ICON_PATH_192,
     '/myapp/icons/icon-512.png'
 ];
 
@@ -29,18 +31,18 @@ const ASSETS_TO_CACHE = [
  */
 self.addEventListener('install', (event) => {
     console.log('[Service Worker] Instalacja...');
-    
+
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             console.log('[Service Worker] Cachowanie zasobów');
-            return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
-                console.log('[Service Worker] Błąd cachowania:', err);
-                // Kontynuuj nawet jeśli niektóre zasoby się nie cachują
-                return Promise.resolve();
-            });
+            return cache.addAll(ASSETS_TO_CACHE);
+        }).catch((err) => {
+            console.error('[Service Worker] Błąd cachowania podczas instalacji:', err);
+            // Nie pozwalaj na sukces instalacji przy błędach cachowania
+            throw err;
         })
     );
-    
+
     // Wymusza aktywację nowego Service Workera
     self.skipWaiting();
 });
@@ -253,11 +255,11 @@ function offlineResponse() {
  */
 self.addEventListener('message', (event) => {
     console.log('[Service Worker] Wiadomość:', event.data);
-    
+
     if (event.data && event.data.type === 'SKIP_WAITING') {
         self.skipWaiting();
     }
-    
+
     if (event.data && event.data.type === 'CLEAR_CACHE') {
         caches.keys().then((cacheNames) => {
             cacheNames.forEach((cacheName) => {
@@ -265,7 +267,7 @@ self.addEventListener('message', (event) => {
             });
         });
     }
-    
+
     if (event.data && event.data.type === 'CACHE_ASSETS') {
         caches.open(CACHE_NAME).then((cache) => {
             cache.addAll(event.data.assets).catch((err) => {
@@ -273,13 +275,7 @@ self.addEventListener('message', (event) => {
             });
         });
     }
-});
 
-/**
- * Periodyczne odświeżanie cache'u
- * Sprawdza aktualizacje co 24 godziny
- */
-self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'CHECK_UPDATE') {
         checkForUpdates();
     }
@@ -327,8 +323,8 @@ self.addEventListener('push', (event) => {
     
     const options = {
         body: event.data.text(),
-        icon: '/myapp/icons/icon-192.png',
-        badge: '/myapp/icons/icon-96.png',
+        icon: ICON_PATH_192,
+        badge: ICON_PATH_96,
         tag: 'notification',
         requireInteraction: false,
     };

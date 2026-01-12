@@ -78,11 +78,24 @@ const DB = (() => {
      */
     function saveDatabase(db) {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+            // Sprawdź dostępność localStorage
+            if (!window.localStorage) {
+                throw new Error('localStorage nie jest dostępny w tej przeglądarce');
+            }
+
+            const jsonString = JSON.stringify(db);
+            localStorage.setItem(STORAGE_KEY, jsonString);
             console.log('[DB] Baza danych zapisana');
             return true;
         } catch (error) {
             console.error('[DB] Błąd zapisywania bazy danych:', error);
+
+            // Sprawdź czy to błąd quota
+            if (error.name === 'QuotaExceededError' || error.code === 22) {
+                console.error('[DB] Przekroczono limit miejsca w localStorage');
+                // Można tutaj dodać logikę czyszczenia starych danych
+            }
+
             return false;
         }
     }
