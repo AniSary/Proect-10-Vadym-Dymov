@@ -16,6 +16,11 @@ const App = (() => {
             dateInput.value = new Date().toISOString().split('T')[0];
         }
         
+        const filterData = document.getElementById('filterData');
+        if (filterData) {
+            filterData.value = new Date().toISOString().split('T')[0];
+        }
+        
         loadSettings();
         
         registerEventListeners();
@@ -125,9 +130,7 @@ const App = (() => {
         }
         
         const filterData = document.getElementById('filterData');
-        const filterRok = document.getElementById('filterRok');
         if (filterData) filterData.addEventListener('change', refreshStatistics);
-        if (filterRok) filterRok.addEventListener('change', refreshStatistics);
         
         registerSettingsListeners();
         
@@ -416,19 +419,20 @@ const App = (() => {
         console.log('[App] Odświeżanie statystyk');
         
         const dataValue = document.getElementById('filterData').value;
-        const rok = document.getElementById('filterRok').value;
         
         const filters = {};
         if (dataValue) {
-            const date = new Date(dataValue);
+            const date = new Date(dataValue + 'T00:00:00');
             filters.miesiac = date.getMonth();
             filters.rok = date.getFullYear();
+            console.log('[App] Filtry statystyk:', filters);
         }
-        if (rok) filters.rok = rok;
         
         const summary = DB.getSummary(filters);
+        console.log('[App] Podsumowanie:', summary);
         
         const stats = DB.getStatisticsByCategory(filters);
+        console.log('[App] Statystyki po kategoriach:', stats);
         
         updateStatisticsValues(summary);
         
