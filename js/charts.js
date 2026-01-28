@@ -108,8 +108,8 @@ const Charts = (() => {
             ctx.fillStyle = colors.categories[index % colors.categories.length];
             ctx.fillRect(x, y, 12, 12);
             
-            ctx.fillStyle = '#2c3e50';
-            ctx.font = '12px Arial';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
             ctx.fillText(item.label, x + 16, y - 2);

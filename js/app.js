@@ -130,7 +130,10 @@ const App = (() => {
         }
         
         const filterData = document.getElementById('filterData');
-        if (filterData) filterData.addEventListener('change', refreshStatistics);
+        if (filterData) {
+            filterData.addEventListener('change', refreshStatistics);
+            filterData.addEventListener('input', refreshStatistics);
+        }
         
         registerSettingsListeners();
         
