@@ -1,40 +1,26 @@
-/**
- * Notifications Module - Finansowy Tracker
- * System powiadomień i alertów dla użytkownika
- */
-
 const Notifications = (() => {
-    // Stałe konfiguracyjne
-    const NOTIFICATION_TIMEOUT = 5000; // 5 sekund
-    const MAX_NOTIFICATIONS = 3; // Maksymalnie 3 powiadomienia na raz
-    const GEOLOCATION_TIMEOUT = 5000; // 5 sekund na geolokację
-    const GEOLOCATION_MAX_AGE = 3600000; // 1 godzina cache geolokacji
+    const NOTIFICATION_TIMEOUT = 5000;
+    const MAX_NOTIFICATIONS = 3;
+    const GEOLOCATION_TIMEOUT = 5000;
+    const GEOLOCATION_MAX_AGE = 3600000;
 
-    // Ścieżki do ikon
     const ICON_PATH_192 = '/myapp/icons/icon-192.png';
     const ICON_PATH_96 = '/myapp/icons/icon-96.png';
 
-    // Limity budżetowe
-    const BUDGET_WARNING_THRESHOLD = 0.8; // 80% limitu
+    const BUDGET_WARNING_THRESHOLD = 0.8;
     
-    /**
-     * Wyświetl powiadomienie
-     */
     function show(type, title, message, options = {}) {
         const container = document.getElementById('notificationsContainer');
         const timeout = options.timeout !== undefined ? options.timeout : NOTIFICATION_TIMEOUT;
         
-        // Sprawdź limit powiadomień
         const existingNotifications = container.querySelectorAll('.notification');
         if (existingNotifications.length >= MAX_NOTIFICATIONS) {
             existingNotifications[0].remove();
         }
         
-        // Utwórz element powiadomienia
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
 
-        // Utwórz zawartość powiadomienia
         const contentDiv = document.createElement('div');
         contentDiv.className = 'notification-content';
 
@@ -49,7 +35,6 @@ const Notifications = (() => {
         contentDiv.appendChild(titleDiv);
         contentDiv.appendChild(messageDiv);
 
-        // Utwórz przycisk zamknięcia
         const closeBtn = document.createElement('button');
         closeBtn.className = 'notification-close';
         closeBtn.setAttribute('aria-label', 'Zamknij powiadomienie');
@@ -60,10 +45,8 @@ const Notifications = (() => {
         
         container.appendChild(notification);
         
-        // Dodaj event listener do przycisku zamknięcia
         closeBtn.addEventListener('click', () => removeNotification(notification));
         
-        // Automatyczne usunięcie po timeout
         if (timeout > 0) {
             setTimeout(() => {
                 removeNotification(notification);
@@ -75,9 +58,6 @@ const Notifications = (() => {
         return notification;
     }
     
-    /**
-     * Usuń powiadomienie
-     */
     function removeNotification(notification) {
         if (!notification || !notification.parentNode) return;
         
@@ -89,52 +69,33 @@ const Notifications = (() => {
         }, 300);
     }
     
-    /**
-     * Powiadomienie sukcesu
-     */
     function success(title, message, options = {}) {
         return show('success', title, message, options);
     }
     
-    /**
-     * Powiadomienie błędu
-     */
     function error(title, message, options = {}) {
         return show('error', title, message, options);
     }
     
-    /**
-     * Powiadomienie ostrzeżenia
-     */
     function warning(title, message, options = {}) {
         return show('warning', title, message, options);
     }
     
-    /**
-     * Powiadomienie informacyjne
-     */
     function info(title, message, options = {}) {
         return show('info', title, message, options);
     }
     
-    /**
-     * Usuń wszystkie powiadomienia
-     */
     function clearAll() {
         const container = document.getElementById('notificationsContainer');
         const notifications = container.querySelectorAll('.notification');
         notifications.forEach(notif => removeNotification(notif));
     }
     
-    /**
-     * Pokaż potwierdzenie
-     */
     function confirm(title, message, onConfirm, onCancel) {
         const notification = show('info', title, message, { timeout: 0 });
         
         const content = notification.querySelector('.notification-content');
         
-        // Utwórz przyciski
         const buttonsDiv = document.createElement('div');
         buttonsDiv.style.display = 'flex';
         buttonsDiv.style.gap = '8px';
@@ -177,22 +138,10 @@ const Notifications = (() => {
         return notification;
     }
     
-    /**
-     * Pokaż toast (szybkie powiadomienie)
-     */
     function toast(message, type = 'info') {
         return show(type, '', message, { timeout: 3000 });
     }
     
-
-    
-    /**
-     * Powiadomienia Business Logic
-     */
-    
-    /**
-     * Powiadomienie o transakcji
-     */
     function notifyTransactionAdded(transakcja) {
         const categoryEmoji = getCategoryEmoji(transakcja.kategoria);
         const typeText = transakcja.typ === 'dochód' ? 'Dochód' : 'Wydatek';
@@ -204,16 +153,10 @@ const Notifications = (() => {
         );
     }
     
-    /**
-     * Powiadomienie o transakcji usuniętej
-     */
     function notifyTransactionDeleted() {
         success('Transakcja usunięta', 'Transakcja została usunięta z historii', { timeout: 3000 });
     }
     
-    /**
-     * Powiadomienie o przekroczeniu limitu
-     */
     function notifyLimitExceeded(kwota, limit) {
         warning(
             'Limit wydatków przekroczony!',
@@ -222,9 +165,6 @@ const Notifications = (() => {
         );
     }
     
-    /**
-     * Powiadomienie o osiągnięciu progu limitu
-     */
     function notifyLimitThreshold(procent) {
         info(
             'Zbliżasz się do limitu',
@@ -233,23 +173,14 @@ const Notifications = (() => {
         );
     }
     
-    /**
-     * Powiadomienie o zapisaniu ustawień
-     */
     function notifySettingsSaved() {
         success('Ustawienia zapisane', 'Twoje preferencje zostały zaktualizowane', { timeout: 3000 });
     }
     
-    /**
-     * Powiadomienie o eksporcie
-     */
     function notifyExported() {
         success('Dane wyeksportowane', 'Dane zostały pobrane w formacie JSON', { timeout: 4000 });
     }
     
-    /**
-     * Powiadomienie o imporcie
-     */
     function notifyImported(iloscTransakcji) {
         success(
             'Dane zaimportowane',
@@ -258,37 +189,22 @@ const Notifications = (() => {
         );
     }
     
-    /**
-     * Powiadomienie o błędzie
-     */
     function notifyError(title, message) {
         error(title, message, { timeout: 5000 });
     }
     
-    /**
-     * Powiadomienie o braku danych
-     */
     function notifyNoData() {
         info('Brak danych', 'Nie masz jeszcze żadnych transakcji', { timeout: 4000 });
     }
     
-    /**
-     * Powiadomienie o offline mode
-     */
     function notifyOfflineMode() {
         info('Tryb offline', 'Pracujesz bez połączenia internetowego', { timeout: 0 });
     }
     
-    /**
-     * Powiadomienie o online mode
-     */
     function notifyOnlineMode() {
         success('Online', 'Połączenie internetowe zostało przywrócone', { timeout: 3000 });
     }
     
-    /**
-     * Helper - pobierz emoji dla kategorii
-     */
     function getCategoryEmoji(kategoria) {
         const emojis = {
             'jedzenie': '🍔',
@@ -305,9 +221,6 @@ const Notifications = (() => {
         return emojis[kategoria] || '💰';
     }
     
-    /**
-     * Powiadomienia systemowe - notifications API
-     */
     function requestNotificationPermission() {
         if ('Notification' in window) {
             if (Notification.permission === 'granted') {
@@ -320,9 +233,6 @@ const Notifications = (() => {
         }
     }
     
-    /**
-     * Pokaż systemowe powiadomienie
-     */
     function showSystemNotification(title, options = {}) {
         if ('Notification' in window && Notification.permission === 'granted') {
             return new Notification(title, {
@@ -333,30 +243,22 @@ const Notifications = (() => {
         }
     }
     
-    /**
-     * SYSTEM PRZYPOMINAŃ BUDŻETU
-     * Sprawdza czy użytkownik zbliża się do limitu wydatków
-     */
-    
     let lastReminderCheck = 0;
-    const REMINDER_CHECK_INTERVAL = 60000; // Sprawdzaj co 1 minutę
-    const THRESHOLDS = [50, 75, 90, 100]; // Progi alertów w %
+    const REMINDER_CHECK_INTERVAL = 60000;
+    const THRESHOLDS = [50, 75, 90, 100];
     
     function checkBudgetReminders() {
-        // Unikaj zbyt częstych sprawdzeń
         const now = Date.now();
         if (now - lastReminderCheck < REMINDER_CHECK_INTERVAL) {
             return;
         }
         lastReminderCheck = now;
         
-        // Sprawdź czy powiadomienia budżetu są włączone
         const settings = DB.getSettings();
         if (!settings.powiadomieniaLimitu) {
             return;
         }
         
-        // Oblicz wydatki za bieżący miesiąc
         const today = new Date();
         const monthlyExpenses = calculateMonthlyExpenses(
             today.getMonth(),
@@ -368,7 +270,6 @@ const Notifications = (() => {
         
         console.log(`[Reminders] Wydatki: ${monthlyExpenses.toFixed(2)} / ${limit.toFixed(2)} (${percentage.toFixed(1)}%)`);
         
-        // Sprawdź czy osiągnął jakiś próg i wyślij powiadomienie
         checkThresholdAndNotify(percentage, monthlyExpenses, limit);
     }
     
@@ -394,25 +295,19 @@ const Notifications = (() => {
             ? JSON.parse(localStorage.getItem('budget-reminders'))
             : {};
         
-        // Sprawdź każdy próg
         THRESHOLDS.forEach(threshold => {
             if (percentage >= threshold) {
                 const key = `${reminderKey}-${threshold}`;
                 
-                // Pokaż powiadomienie tylko raz dziennie na próg
                 if (!shownReminders[key]) {
                     if (percentage >= 100) {
-                        // Krytyczne - przekroczony limit
                         showBudgetExceededNotification(spent, limit);
                     } else if (percentage >= 90) {
-                        // Ostrzeżenie - prawie limit
                         showBudgetWarningNotification(percentage, spent, limit);
                     } else if (percentage >= 75) {
-                        // Info - sporo wydanych
                         showBudgetInfoNotification(percentage, spent, limit);
                     }
                     
-                    // Zapamiętaj że pokazaliśmy to powiadomienie
                     shownReminders[key] = true;
                     localStorage.setItem('budget-reminders', JSON.stringify(shownReminders));
                 }
@@ -423,10 +318,8 @@ const Notifications = (() => {
     function showBudgetExceededNotification(spent, limit) {
         const message = `Przekroczyłeś limit budżetu! Wydałeś ${spent.toFixed(2)} zł z limitu ${limit.toFixed(2)} zł`;
         
-        // Powiadomienie w UI
         warning('⚠️ Limit przekroczony', message, { timeout: 0 });
         
-        // Push notification
         showSystemNotification('Finansowy Tracker - Limit przekroczony', {
             body: message,
             tag: 'budget-exceeded',
@@ -452,9 +345,7 @@ const Notifications = (() => {
         info('💡 Przegląd budżetu', message, { timeout: 5000 });
     }
     
-    // Zwróć publiczne metody
     return {
-        // Metody podstawowe
         show,
         success,
         error,
@@ -464,7 +355,6 @@ const Notifications = (() => {
         confirm,
         clearAll,
         removeNotification,
-        // Business Logic
         notifyTransactionAdded,
         notifyTransactionDeleted,
         notifyLimitExceeded,
@@ -476,10 +366,8 @@ const Notifications = (() => {
         notifyNoData,
         notifyOfflineMode,
         notifyOnlineMode,
-        // System Notifications
         requestNotificationPermission,
         showSystemNotification,
-        // Budget Reminders
         checkBudgetReminders
     };
 })();

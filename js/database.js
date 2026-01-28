@@ -1,16 +1,8 @@
-/**
- * Database Module - Finansowy Tracker
- * Obsługa LocalStorage - przechowywanie danych aplikacji
- * Wzorzec: Singleton Pattern
- */
-
 const DB = (() => {
-    // Prywatne zmienne
     const STORAGE_KEY = 'finansowy-tracker-db';
     const SETTINGS_KEY = 'finansowy-tracker-settings';
     const VERSION = '1.0.0';
     
-    // Domyślna struktura bazy danych
     const defaultDatabase = {
         version: VERSION,
         transakcje: [],
@@ -20,7 +12,6 @@ const DB = (() => {
         }
     };
     
-    // Domyślne ustawienia
     const defaultSettings = {
         limitWydatkow: 3000,
         waluty: 'PLN',
@@ -29,26 +20,19 @@ const DB = (() => {
         powiadomieniaLimitu: true
     };
     
-    /**
-     * Inicjalizacja bazy danych
-     * Tworzy nową bazę, jeśli nie istnieje
-     */
     function init() {
         console.log('[DB] Inicjalizacja bazy danych');
         
-        // Sprawdź czy baza istnieje
         if (!localStorage.getItem(STORAGE_KEY)) {
             console.log('[DB] Tworzenie nowej bazy danych');
             localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultDatabase));
         }
         
-        // Sprawdź czy ustawienia istnieją
         if (!localStorage.getItem(SETTINGS_KEY)) {
             console.log('[DB] Tworzenie nowych ustawień');
             localStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultSettings));
         }
         
-        // Migracja - jeśli wersja się nie zgadza
         const db = getDatabase();
         if (db.version !== VERSION) {
             console.log('[DB] Migracja bazy danych z wersji', db.version, 'do', VERSION);
@@ -56,9 +40,6 @@ const DB = (() => {
         }
     }
     
-    /**
-     * Pobierz całą bazę danych
-     */
     function getDatabase() {
         const db = localStorage.getItem(STORAGE_KEY);
         if (!db) {
@@ -73,12 +54,8 @@ const DB = (() => {
         }
     }
     
-    /**
-     * Zapisz całą bazę danych
-     */
     function saveDatabase(db) {
         try {
-            // Sprawdź dostępność localStorage
             if (!window.localStorage) {
                 throw new Error('localStorage nie jest dostępny w tej przeglądarce');
             }
@@ -90,23 +67,14 @@ const DB = (() => {
         } catch (error) {
             console.error('[DB] Błąd zapisywania bazy danych:', error);
 
-            // Sprawdź czy to błąd quota
             if (error.name === 'QuotaExceededError' || error.code === 22) {
                 console.error('[DB] Przekroczono limit miejsca w localStorage');
-                // Można tutaj dodać logikę czyszczenia starych danych
             }
 
             return false;
         }
     }
     
-    /**
-     * OPERACJE NA TRANSAKCJACH
-     */
-    
-    /**
-     * Dodaj nową transakcję
-     */
     function addTransakcja(typ, kategoria, kwota, data, opis = '') {
         try {
             const db = getDatabase();
@@ -121,7 +89,6 @@ const DB = (() => {
                 dataUtworzenia: new Date().toISOString()
             };
             
-            // Walidacja
             if (!transakcja.kwota || transakcja.kwota <= 0) {
                 throw new Error('Kwota musi być większa od 0');
             }
@@ -137,9 +104,6 @@ const DB = (() => {
         }
     }
     
-    /**
-     * Pobierz wszystkie transakcje
-     */
     function getTransakcje() {
         const db = getDatabase();
         return db.transakcje.sort((a, b) => {
@@ -147,37 +111,29 @@ const DB = (() => {
         });
     }
     
-    /**
-     * Pobierz transakcje z filtrem
-     */
     function getTransakcjeFiltered(filters = {}) {
         let transakcje = getTransakcje();
         
-        // Filtr po typie
         if (filters.typ) {
             transakcje = transakcje.filter(t => t.typ === filters.typ);
         }
         
-        // Filtr po kategorii
         if (filters.kategoria) {
             transakcje = transakcje.filter(t => t.kategoria === filters.kategoria);
         }
         
-        // Filtr po dacie od
         if (filters.dataOd) {
             transakcje = transakcje.filter(t => 
                 new Date(t.data) >= new Date(filters.dataOd)
             );
         }
         
-        // Filtr po dacie do
         if (filters.dataDo) {
             transakcje = transakcje.filter(t => 
                 new Date(t.data) <= new Date(filters.dataDo)
             );
         }
         
-        // Filtr po miesiącu i roku
         if (filters.miesiac !== undefined && filters.rok !== undefined) {
             transakcje = transakcje.filter(t => {
                 const data = new Date(t.data);
@@ -189,17 +145,11 @@ const DB = (() => {
         return transakcje;
     }
     
-    /**
-     * Pobierz transakcję po ID
-     */
     function getTransakcjaById(id) {
         const transakcje = getTransakcje();
         return transakcje.find(t => t.id === id);
     }
     
-    /**
-     * Usuń transakcję po ID
-     */
     function deleteTransakcja(id) {
         try {
             const db = getDatabase();
@@ -213,9 +163,6 @@ const DB = (() => {
         }
     }
     
-    /**
-     * Aktualizuj transakcję
-     */
     function updateTransakcja(id, updates) {
         try {
             const db = getDatabase();
@@ -238,9 +185,6 @@ const DB = (() => {
         }
     }
     
-    /**
-     * Usuń wszystkie transakcje
-     */
     function deleteAllTransakcje() {
         try {
             const db = getDatabase();
@@ -254,13 +198,6 @@ const DB = (() => {
         }
     }
     
-    /**
-     * STATYSTYKI
-     */
-    
-    /**
-     * Oblicz podsumowanie (dochody, wydatki, bilans)
-     */
     function getSummary(filters = {}) {
         const transakcje = getTransakcjeFiltered(filters);
         
@@ -279,9 +216,6 @@ const DB = (() => {
         };
     }
     
-    /**
-     * Pobierz statystyki po kategoriach
-     */
     function getStatisticsByCategory(filters = {}) {
         const transakcje = getTransakcjeFiltered(filters);
         const stats = {};
@@ -302,9 +236,6 @@ const DB = (() => {
         return Object.values(stats);
     }
     
-    /**
-     * Pobierz statystyki po dniach
-     */
     function getStatisticsByDay(filters = {}) {
         const transakcje = getTransakcjeFiltered(filters);
         const stats = {};
@@ -329,13 +260,6 @@ const DB = (() => {
         return Object.values(stats);
     }
     
-    /**
-     * USTAWIENIA
-     */
-    
-    /**
-     * Pobierz ustawienia
-     */
     function getSettings() {
         const settings = localStorage.getItem(SETTINGS_KEY);
         if (!settings) {
@@ -349,9 +273,6 @@ const DB = (() => {
         }
     }
     
-    /**
-     * Zapisz ustawienia
-     */
     function saveSettings(settings) {
         try {
             localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -363,22 +284,12 @@ const DB = (() => {
         }
     }
     
-    /**
-     * Aktualizuj ustawienie
-     */
     function updateSetting(key, value) {
         const settings = getSettings();
         settings[key] = value;
         return saveSettings(settings);
     }
     
-    /**
-     * EKSPORT I IMPORT
-     */
-    
-    /**
-     * Eksportuj dane do JSON
-     */
     function exportToJSON() {
         try {
             const db = getDatabase();
@@ -398,9 +309,6 @@ const DB = (() => {
         }
     }
     
-    /**
-     * Importuj dane z JSON
-     */
     function importFromJSON(json) {
         try {
             const data = JSON.parse(json);
@@ -422,13 +330,6 @@ const DB = (() => {
         }
     }
     
-    /**
-     * ZARZĄDZANIE KATEGORIAMI
-     */
-    
-    /**
-     * Dodaj nową kategorię
-     */
     function addCategory(type, categoryName) {
         try {
             console.log(`[DB.addCategory] Start: type="${type}", categoryName="${categoryName}"`);
@@ -444,10 +345,8 @@ const DB = (() => {
                 return false;
             }
             
-            // Normalizuj nazwę (lowercase dla porównania)
             const normalized = categoryName.toLowerCase().trim();
             
-            // Sprawdź czy już istnieje
             const exists = categories.some(cat => cat.toLowerCase() === normalized);
             console.log(`[DB.addCategory] Czy istnieje "${normalized}"?`, exists);
             
@@ -456,7 +355,6 @@ const DB = (() => {
                 return false;
             }
             
-            // Dodaj kategorię
             categories.push(categoryName);
             console.log(`[DB.addCategory] Po dodaniu:`, categories);
             
@@ -471,15 +369,11 @@ const DB = (() => {
         }
     }
     
-    /**
-     * Usuń kategorię
-     */
     function removeCategory(type, categoryName) {
         try {
             const db = getDatabase();
             const categories = db.kategorie[type];
             
-            // Znaj kategorię i usuń
             const index = categories.indexOf(categoryName);
             if (index > -1) {
                 categories.splice(index, 1);
@@ -496,33 +390,18 @@ const DB = (() => {
         }
     }
     
-    /**
-     * Pobierz kategorię
-     */
     function getCategories() {
         const db = getDatabase();
         return db.kategorie;
     }
     
-    /**
-     * MIGRACJA DANYCH
-     */
-    
     function migrate(db) {
-        // Tutaj mogą być zmiany schemy w zależności od wersji
         if (db.version !== VERSION) {
             db.version = VERSION;
             saveDatabase(db);
         }
     }
     
-    /**
-     * RESETOWANIE
-     */
-    
-    /**
-     * Reset do ustawień domyślnych
-     */
     function reset() {
         try {
             localStorage.removeItem(STORAGE_KEY);
@@ -536,9 +415,6 @@ const DB = (() => {
         }
     }
     
-    /**
-     * Pobierz informacje o bazie danych
-     */
     function getInfo() {
         const db = getDatabase();
         return {
@@ -549,10 +425,8 @@ const DB = (() => {
         };
     }
     
-    // Zwróć publiczne metody
     return {
         init,
-        // Transakcje
         addTransakcja,
         getTransakcje,
         getTransakcjeFiltered,
@@ -560,22 +434,17 @@ const DB = (() => {
         deleteTransakcja,
         updateTransakcja,
         deleteAllTransakcje,
-        // Statystyki
         getSummary,
         getStatisticsByCategory,
         getStatisticsByDay,
-        // Ustawienia
         getSettings,
         saveSettings,
         updateSetting,
-        // Kategorie
         addCategory,
         removeCategory,
         getCategories,
-        // Eksport/Import
         exportToJSON,
         importFromJSON,
-        // Inne
         reset,
         getInfo,
         getDatabase,
@@ -583,7 +452,6 @@ const DB = (() => {
     };
 })();
 
-// Inicjalizacja bazy danych po załadowaniu modułu
 DB.init();
 
 console.log('[Database] Moduł załadowany');

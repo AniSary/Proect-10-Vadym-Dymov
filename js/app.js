@@ -1,73 +1,48 @@
-/**
- * App Module - Finansowy Tracker
- * Główna logika aplikacji - zarządzanie stanem i interakcjami
- */
-
 const App = (() => {
-    // Stałe konfiguracyjne
-    const GEOLOCATION_TIMEOUT = 5000; // 5 sekund na geolokację
-    const GEOLOCATION_MAX_AGE = 3600000; // 1 godzina cache geolokacji
-    const BUDGET_WARNING_THRESHOLD = 0.8; // 80% limitu
+    const GEOLOCATION_TIMEOUT = 5000;
+    const GEOLOCATION_MAX_AGE = 3600000;
+    const BUDGET_WARNING_THRESHOLD = 0.8;
 
-    // Zmienna stanu
     let state = {
         currentScreen: 'ekran-glowny',
         isOnline: navigator.onLine
     };
     
-    /**
-     * INICJALIZACJA APLIKACJI
-     */
-    
     function init() {
         console.log('[App] Inicjalizacja aplikacji');
         
-        // Ustaw datę dzisiejszą w formularzu
         const dateInput = document.getElementById('data');
         if (dateInput) {
             dateInput.value = new Date().toISOString().split('T')[0];
         }
         
-        // Załaduj ustawienia
         loadSettings();
         
-        // Rejestruj event listenery
         registerEventListeners();
         
-        // Odśwież dashboard
         refreshDashboard();
         
-        // Sprawdź status online
         updateOnlineStatus();
         
-        // Request notification permission
         Notifications.requestNotificationPermission();
         
-        // Spróbuj określić lokalizację użytkownika (do auto-ustawienia waluty)
         detectLocationAndSetCurrency();
         
         console.log('[App] Inicjalizacja zakończona');
     }
     
-    /**
-     * GEOLOKACJA - Auto-detect waluty na podstawie lokalizacji
-     */
-    
     function detectLocationAndSetCurrency() {
-        // Sprawdź czy geolokacja jest dostępna
         if (!navigator.geolocation) {
             console.log('[Geolocation] Geolocation API nie jest dostępna w tej przeglądarce');
             return;
         }
         
-        // Sprawdź czy użytkownik już ma ustawioną walutę (nie overriduj jej)
         const currentSettings = DB.getSettings();
         if (currentSettings.waluty && currentSettings.waluty !== 'PLN') {
             console.log('[Geolocation] Waluta już ustawiona na:', currentSettings.waluty);
             return;
         }
         
-        // Żądaj dostępu do lokalizacji
         navigator.geolocation.getCurrentPosition(
             (position) => handleGeolocationSuccess(position),
             (error) => handleGeolocationError(error),
@@ -80,7 +55,6 @@ const App = (() => {
         const lng = position.coords.longitude;
         console.log(`[Geolocation] Lokalizacja: ${lat}, ${lng}`);
         
-        // Mapuj współrzędne do waluty (uproszczona logika)
         const currency = mapCoordinatesToCurrency(lat, lng);
         
         if (currency && currency !== 'PLN') {
@@ -89,13 +63,11 @@ const App = (() => {
             settings.waluty = currency;
             DB.saveSettings(settings);
             
-            // Aktualizuj select w UI
             const currencySelect = document.getElementById('waluty');
             if (currencySelect) {
                 currencySelect.value = currency;
             }
             
-            // Odśwież dashboard z nową walutą
             refreshDashboard();
         }
     }
@@ -117,93 +89,68 @@ const App = (() => {
     }
     
     function mapCoordinatesToCurrency(lat, lng) {
-        // Uproszczona mapa krajów -> walut
-        // Polska: 49-55°N, 14-24°E
         if (lat >= 49 && lat <= 55 && lng >= 14 && lng <= 24) {
             return 'PLN';
         }
         
-        // Europa (Euro) - przybliżone
         if (lat >= 35 && lat <= 71 && lng >= -10 && lng <= 40) {
-            // Wyszczególnione kraje Eurostref
-            if ((lat >= 48.5 && lat <= 54.5 && lng >= 5.5 && lng <= 15.5) ||  // Niemcy, Czechy
-                (lat >= 43 && lat <= 51 && lng >= -5 && lng <= 8) ||           // Francja, Belgia
-                (lat >= 40.5 && lat <= 48 && lng >= 4 && lng <= 20)) {         // Austria, Włochy, Słowenia
+            if ((lat >= 48.5 && lat <= 54.5 && lng >= 5.5 && lng <= 15.5) ||
+                (lat >= 43 && lat <= 51 && lng >= -5 && lng <= 8) ||
+                (lat >= 40.5 && lat <= 48 && lng >= 4 && lng <= 20)) {
                 return 'EUR';
             }
         }
         
-        // USA: 25-50°N, 66-125°W
         if (lat >= 24 && lat <= 50 && lng >= -125 && lng <= -66) {
             return 'USD';
         }
         
-        // Domyślnie PLN dla powiatu europejskiego
         return 'PLN';
     }
     
-    /**
-     * REJESTRACJA EVENT LISTENERÓW
-     */
-    
     function registerEventListeners() {
-        // Nawigacja
         const navButtons = document.querySelectorAll('.nav-btn');
         navButtons.forEach(btn => {
             btn.addEventListener('click', handleNavigation);
         });
         
-        // Formularz transakcji
         const formularz = document.getElementById('formularzTransakcji');
         if (formularz) {
             formularz.addEventListener('submit', handleFormSubmit);
             
-            // Zmień kategorie w zależności od typu
             const typSelect = document.getElementById('typ');
             if (typSelect) {
                 typSelect.addEventListener('change', updateCategories);
             }
         }
         
-        // Filtry statystyk
-        const filterMiesiac = document.getElementById('filterMiesiac');
+        const filterData = document.getElementById('filterData');
         const filterRok = document.getElementById('filterRok');
-        if (filterMiesiac) filterMiesiac.addEventListener('change', refreshStatistics);
+        if (filterData) filterData.addEventListener('change', refreshStatistics);
         if (filterRok) filterRok.addEventListener('change', refreshStatistics);
         
-        // Ustawienia
         registerSettingsListeners();
         
-        // FAB Button - szybkie dodawanie transakcji
         const fabBtn = document.getElementById('fabBtn');
         if (fabBtn) {
             fabBtn.addEventListener('click', handleFabClick);
         }
         
-        // Status online
         window.addEventListener('online', handleOnlineStatusChange);
         window.addEventListener('offline', handleOnlineStatusChange);
     }
     
-    /**
-     * FLOATING ACTION BUTTON - FAB
-     */
-    
     function handleFabClick() {
-        // Przejdź do ekranu dodawania transakcji
         const ekranDodaj = document.getElementById('ekran-dodaj');
         const ekranGlowny = document.getElementById('ekran-glowny');
         
-        // Ukryj główny ekran
         document.querySelectorAll('.ekran.active').forEach(el => {
             el.classList.remove('active');
         });
         
-        // Pokaż ekran dodawania
         if (ekranDodaj) {
             ekranDodaj.classList.add('active');
             
-            // Updatej nawigację
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.dataset.ekran === 'ekran-dodaj') {
@@ -211,7 +158,6 @@ const App = (() => {
                 }
             });
             
-            // Ustaw fokus na pole kwoty dla UX
             setTimeout(() => {
                 const kwotaInput = document.getElementById('kwota');
                 if (kwotaInput) kwotaInput.focus();
@@ -221,34 +167,25 @@ const App = (() => {
         state.currentScreen = 'ekran-dodaj';
     }
     
-    /**
-     * NAWIGACJA MIĘDZY EKRANAMI
-     */
-    
     function handleNavigation(event) {
         const ekranId = event.currentTarget.dataset.ekran;
         if (!ekranId) return;
         
-        // Zamknij aktualny ekran
         document.querySelectorAll('.ekran.active').forEach(el => {
             el.classList.remove('active');
         });
         
-        // Otwórz nowy ekran
         const ekran = document.getElementById(ekranId);
         if (ekran) {
             ekran.classList.add('active');
             
-            // Zaktualizuj nawigację
             document.querySelectorAll('.nav-btn.active').forEach(el => {
                 el.classList.remove('active');
             });
             event.currentTarget.classList.add('active');
             
-            // Ustaw aktualny ekran
             state.currentScreen = ekranId;
             
-            // Odśwież dane dla danego ekranu
             if (ekranId === 'ekran-glowny') {
                 refreshDashboard();
             } else if (ekranId === 'ekran-statystyki') {
@@ -259,32 +196,20 @@ const App = (() => {
         }
     }
     
-    /**
-     * DASHBOARD - EKRAN GŁÓWNY
-     */
-    
     function refreshDashboard() {
         console.log('[App] Odświeżanie dashboardu');
         
-        // Pobierz podsumowanie
         const summary = DB.getSummary();
         
-        // Zaktualizuj wartości
         updateSummaryValues(summary);
         
-        // Załaduj przegląd miesięczny
         loadMonthlyOverview();
         
-        // Załaduj ostatnie transakcje
         loadRecentTransactions();
         
-        // Sprawdź limit wydatków
         checkLimitExceeded(summary);
     }
     
-    /**
-     * Zaktualizuj wartości podsumowania
-     */
     function updateSummaryValues(summary) {
         const dochodElement = document.getElementById('sumaDochodów');
         const wydatekElement = document.getElementById('sumaWydatków');
@@ -298,16 +223,12 @@ const App = (() => {
         }
     }
     
-    /**
-     * Załaduj ostatnie transakcje
-     */
     function loadRecentTransactions() {
         const listaElement = document.getElementById('listaTransakcji');
         if (!listaElement) return;
 
         const transakcje = DB.getTransakcje().slice(0, 10);
 
-        // Wyczyść istniejącą zawartość
         listaElement.innerHTML = '';
 
         if (transakcje.length === 0) {
@@ -358,9 +279,6 @@ const App = (() => {
         });
     }
     
-    /**
-     * Sprawdzenie przekroczenia limitu
-     */
     function checkLimitExceeded(summary) {
         const settings = DB.getSettings();
         const limit = settings.limitWydatkow;
@@ -373,15 +291,11 @@ const App = (() => {
         }
     }
     
-    /**
-     * Załaduj przegląd miesięczny
-     */
     function loadMonthlyOverview() {
         const today = new Date();
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
         
-        // Pobierz transakcje za bieżący miesiąc
         const transakcje = DB.getTransakcje();
         
         let monthlyIncome = 0;
@@ -400,7 +314,6 @@ const App = (() => {
         
         const monthlySaldo = monthlyIncome - monthlyExpense;
         
-        // Aktualizuj UI
         const monthlyDateEl = document.getElementById('monthlyDate');
         const monthlyIncomeEl = document.getElementById('monthlyIncome');
         const monthlyExpenseEl = document.getElementById('monthlyExpense');
@@ -425,41 +338,30 @@ const App = (() => {
         }
     }
     
-    /**
-     * FORMULARZ - DODAWANIE TRANSAKCJI
-     */
-    
     function handleFormSubmit(event) {
         event.preventDefault();
         
         try {
-            // Pobierz dane z formularza
             const typ = document.getElementById('typ').value;
             const kategoria = document.getElementById('kategoria').value;
             const kwota = parseFloat(document.getElementById('kwota').value);
             const data = document.getElementById('data').value;
             const opis = document.getElementById('opis').value;
             
-            // Walidacja
             if (!typ || !kategoria || !kwota || !data) {
                 Notifications.notifyError('Błąd', 'Wypełnij wszystkie wymagane pola');
                 return;
             }
             
-            // Dodaj transakcję do bazy danych
             const transakcja = DB.addTransakcja(typ, kategoria, kwota, data, opis);
             
-            // Powiadomienie
             Notifications.notifyTransactionAdded(transakcja);
             
-            // Resetuj formularz
             event.target.reset();
             document.getElementById('data').value = new Date().toISOString().split('T')[0];
             
-            // Odśwież dashboard
             refreshDashboard();
             
-            // Sprawdź limit budżetu
             Notifications.checkBudgetReminders();
             
             console.log('[App] Transakcja dodana:', transakcja);
@@ -469,9 +371,6 @@ const App = (() => {
         }
     }
     
-    /**
-     * Aktualizuj dostępne kategorie na podstawie typu
-     */
     function updateCategories() {
         const typSelect = document.getElementById('typ');
         const kategoriaSelect = document.getElementById('kategoria');
@@ -481,16 +380,13 @@ const App = (() => {
         const typ = typSelect.value;
         const db = DB.getDatabase();
 
-        // Wyczyść opcje
         kategoriaSelect.innerHTML = '';
 
-        // Dodaj domyślną opcję
         const defaultOption = document.createElement('option');
         defaultOption.value = '';
         defaultOption.textContent = '-- Wybierz kategorię --';
         kategoriaSelect.appendChild(defaultOption);
 
-        // Pobierz kategorie z bazy danych
         let categories = [];
 
         if (typ === 'wydatek') {
@@ -499,7 +395,6 @@ const App = (() => {
             categories = db.kategorie.dochody || [];
         }
 
-        // Helper do emoji
         const getEmoji = (cat) => {
             const emojis = {
                 'jedzenie': '🍔', 'transport': '🚗', 'rozrywka': '🎬', 'zdrowie': '⚕️',
@@ -509,7 +404,6 @@ const App = (() => {
             return emojis[cat] || '💰';
         };
 
-        // Dodaj kategorie do selecta
         categories.forEach(cat => {
             const option = document.createElement('option');
             option.value = cat;
@@ -518,39 +412,31 @@ const App = (() => {
         });
     }
     
-    /**
-     * STATYSTYKI
-     */
-    
     function refreshStatistics() {
         console.log('[App] Odświeżanie statystyk');
         
-        const miesiac = document.getElementById('filterMiesiac').value;
+        const dataValue = document.getElementById('filterData').value;
         const rok = document.getElementById('filterRok').value;
         
         const filters = {};
-        if (miesiac !== '') filters.miesiac = miesiac;
+        if (dataValue) {
+            const date = new Date(dataValue);
+            filters.miesiac = date.getMonth();
+            filters.rok = date.getFullYear();
+        }
         if (rok) filters.rok = rok;
         
-        // Pobierz podsumowanie ze filtrami
         const summary = DB.getSummary(filters);
         
-        // Pobierz statystyki po kategoriach
         const stats = DB.getStatisticsByCategory(filters);
         
-        // Aktualizuj wartości
         updateStatisticsValues(summary);
         
-        // Rysuj wykresy
         drawStatisticsCharts(stats, summary);
         
-        // Załaduj tabelę kategorii
         loadCategoriesTable(stats);
     }
     
-    /**
-     * Zaktualizuj wartości na kartkach statystyk
-     */
     function updateStatisticsValues(summary) {
         const dochodElement = document.getElementById('statDochodyCałkowite');
         const wydatekElement = document.getElementById('statWydatkiCałkowite');
@@ -564,11 +450,7 @@ const App = (() => {
         }
     }
     
-    /**
-     * Narysuj wykresy statystyk
-     */
     function drawStatisticsCharts(stats, summary) {
-        // Wykres kołowy wydatków po kategoriach
         const wydatkiStats = stats.filter(s => s.typ === 'wydatek');
         
         if (wydatkiStats.length > 0) {
@@ -582,7 +464,6 @@ const App = (() => {
             Charts.drawNoData('chartWydatki', 'Brak danych o wydatkach');
         }
         
-        // Wykres słupkowy dochody vs wydatki
         const barData = {
             label: 'Podsumowanie',
             dochody: summary.dochody,
@@ -592,14 +473,10 @@ const App = (() => {
         Charts.drawBarChart('chartPortfolio', [barData]);
     }
     
-    /**
-     * Załaduj tabelę kategorii
-     */
     function loadCategoriesTable(stats) {
         const tbody = document.getElementById('tabelaKategoriiBody');
         if (!tbody) return;
 
-        // Wyczyść istniejącą zawartość
         tbody.innerHTML = '';
 
         if (stats.length === 0) {
@@ -638,18 +515,12 @@ const App = (() => {
         });
     }
     
-    /**
-     * USTAWIENIA
-     */
-    
     function registerSettingsListeners() {
-        // Ciemny motyw
         const ciemnyMotyw = document.getElementById('ciemnyMotyw');
         if (ciemnyMotyw) {
             ciemnyMotyw.addEventListener('change', toggleDarkTheme);
         }
         
-        // Powiadomienia
         const powiadomieniaWlaczone = document.getElementById('powiadomieniaWlaczone');
         const powiadomieniaLimitu = document.getElementById('powiadomieniaLimitu');
         if (powiadomieniaWlaczone) {
@@ -659,19 +530,15 @@ const App = (() => {
             powiadomieniaLimitu.addEventListener('change', saveSettings);
         }
         
-        // Limit wydatków i waluta
         const limitWydatkow = document.getElementById('limitWydatkow');
         const waluty = document.getElementById('waluty');
         if (limitWydatkow) limitWydatkow.addEventListener('change', saveSettings);
         if (waluty) waluty.addEventListener('change', saveSettings);
         
-        // Zarządzanie kategoriami - Event delegation na poziomie dokumentu
         const settingsContainer = document.getElementById('ekran-ustawienia');
         
-        // Załaduj kategorie na początek
         loadCategoriesUI();
         
-        // Delegacja zdarzeń - słuchamy na całym dokumencie
         setTimeout(() => {
             const newExpenseInput = document.getElementById('newExpenseCategory');
             const newIncomeInput = document.getElementById('newIncomeCategory');
@@ -696,7 +563,6 @@ const App = (() => {
             });
         }, 100);
         
-        // Enter key support
         const newExpenseInput = document.getElementById('newExpenseCategory');
         const newIncomeInput = document.getElementById('newIncomeCategory');
         
@@ -716,13 +582,11 @@ const App = (() => {
             });
         }
         
-        // Eksport danych
         const exportBtn = document.getElementById('exportData');
         if (exportBtn) {
             exportBtn.addEventListener('click', handleExport);
         }
         
-        // Import danych
         const importBtn = document.getElementById('importData');
         const fileInput = document.getElementById('fileInput');
         if (importBtn) {
@@ -732,22 +596,17 @@ const App = (() => {
             fileInput.addEventListener('change', handleImport);
         }
         
-        // Usuń wszystkie transakcje
         const usunWszystkie = document.getElementById('usunWszytkieTransakcje');
         if (usunWszystkie) {
             usunWszystkie.addEventListener('click', handleDeleteAllTransactions);
         }
         
-        // Reset do ustawień domyślnych
         const resetBtn = document.getElementById('resetDoUstawienDomyslnych');
         if (resetBtn) {
             resetBtn.addEventListener('click', handleReset);
         }
     }
     
-    /**
-     * Załaduj ustawienia
-     */
     function loadSettings() {
         const settings = DB.getSettings();
         
@@ -766,9 +625,6 @@ const App = (() => {
         applyTheme(settings.ciemnyMotyw);
     }
     
-    /**
-     * Zapisz ustawienia
-     */
     function saveSettings() {
         const settings = {
             ciemnyMotyw: document.getElementById('ciemnyMotyw')?.checked || false,
@@ -783,16 +639,10 @@ const App = (() => {
         applyTheme(settings.ciemnyMotyw);
     }
     
-    /**
-     * Toggle ciemny motyw
-     */
     function toggleDarkTheme() {
         saveSettings();
     }
     
-    /**
-     * Zastosuj motyw
-     */
     function applyTheme(isDark) {
         if (isDark) {
             document.body.classList.add('dark-theme');
@@ -801,9 +651,6 @@ const App = (() => {
         }
     }
     
-    /**
-     * Eksportuj dane
-     */
     function handleExport() {
         try {
             const json = DB.exportToJSON();
@@ -823,21 +670,16 @@ const App = (() => {
         }
     }
     
-    /**
-     * Importuj dane
-     */
     function handleImport(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Walidacja typu pliku
         if (!file.name.endsWith('.json')) {
             Notifications.notifyError('Błąd importu', 'Wybierz plik JSON');
             return;
         }
 
-        // Walidacja rozmiaru pliku (max 10MB)
-        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+        const MAX_FILE_SIZE = 10 * 1024 * 1024;
         if (file.size > MAX_FILE_SIZE) {
             Notifications.notifyError('Błąd importu', 'Plik jest zbyt duży (maksymalnie 10MB)');
             return;
@@ -848,10 +690,8 @@ const App = (() => {
             try {
                 const json = e.target.result;
 
-                // Walidacja JSON
                 const data = JSON.parse(json);
 
-                // Walidacja struktury danych
                 if (!data.database || !Array.isArray(data.database.transakcje)) {
                     throw new Error('Nieprawidłowa struktura pliku JSON');
                 }
@@ -863,7 +703,6 @@ const App = (() => {
                 Notifications.notifyImported(iloscTransakcji);
                 refreshDashboard();
                 
-                // Resetuj input
                 document.getElementById('fileInput').value = '';
             } catch (error) {
                 Notifications.notifyError('Błąd importu', error.message);
@@ -872,14 +711,9 @@ const App = (() => {
         reader.readAsText(file);
     }
     
-    /**
-     * ZARZĄDZANIE KATEGORIAMI
-     */
-    
     function loadCategoriesUI() {
         const db = DB.getDatabase();
 
-        // Helper do emoji
         const getEmoji = (cat) => {
             const emojis = {
                 'jedzenie': '🍔', 'transport': '🚗', 'rozrywka': '🎬', 'zdrowie': '⚕️',
@@ -889,10 +723,8 @@ const App = (() => {
             return emojis[cat] || '💰';
         };
 
-        // Załaduj wydatki
         const wydatkiList = document.getElementById('kategorieWydatki');
         if (wydatkiList && db.kategorie.wydatki) {
-            // Wyczyść istniejącą zawartość
             wydatkiList.innerHTML = '';
 
             db.kategorie.wydatki.forEach(cat => {
@@ -914,10 +746,8 @@ const App = (() => {
             });
         }
 
-        // Załaduj dochody
         const dochodList = document.getElementById('kategorieDochody');
         if (dochodList && db.kategorie.dochody) {
-            // Wyczyść istniejącą zawartość
             dochodList.innerHTML = '';
 
             db.kategorie.dochody.forEach(cat => {
@@ -943,7 +773,6 @@ const App = (() => {
     function addNewCategory(type, inputElement) {
         const categoryName = inputElement.value.trim().toLowerCase();
         
-        // Walidacja
         if (!categoryName) {
             Notifications.warning('Puste pole', 'Wpisz nazwę kategorii');
             return;
@@ -959,7 +788,6 @@ const App = (() => {
             return;
         }
         
-        // Sprawdź czy to nie liczby (case z inputu)
         if (/^\d+$/.test(categoryName)) {
             Notifications.warning('Błąd', 'Nazwa kategorii nie może być tylko liczbami');
             return;
@@ -967,7 +795,6 @@ const App = (() => {
         
         console.log(`[App] Dodawanie kategorii: "${categoryName}" do typu "${type}"`);
         
-        // Dodaj kategorię
         const success = DB.addCategory(type, categoryName);
         
         if (success) {
@@ -975,28 +802,24 @@ const App = (() => {
             inputElement.value = '';
             loadCategoriesUI();
             
-            // Odśwież opcje w formularzu
             updateCategories();
         } else {
             Notifications.error('Błąd', 'Kategoria już istnieje lub nie można jej dodać');
         }
     }
     
-    // Handler dla HTML onclick
     function handleAddExpenseCategory() {
         console.log('[App] handleAddExpenseCategory wywołane');
         const input = document.getElementById('newExpenseCategory');
         if (input) addNewCategory('wydatki', input);
     }
     
-    // Handler dla HTML onclick
     function handleAddIncomeCategory() {
         console.log('[App] handleAddIncomeCategory wywołane');
         const input = document.getElementById('newIncomeCategory');
         if (input) addNewCategory('dochody', input);
     }
     
-    // Publiczna funkcja do usuwania kategorii (wywoływana z HTML)
     function removeCategory(type, categoryName) {
         Notifications.confirm(
             'Usuń kategorię',
@@ -1015,9 +838,6 @@ const App = (() => {
         );
     }
     
-    /**
-     * Usuń wszystkie transakcje
-     */
     function handleDeleteAllTransactions() {
         Notifications.confirm(
             'Usuń wszystkie transakcje',
@@ -1030,9 +850,6 @@ const App = (() => {
         );
     }
     
-    /**
-     * Reset do ustawień domyślnych
-     */
     function handleReset() {
         Notifications.confirm(
             'Reset aplikacji',
@@ -1045,10 +862,6 @@ const App = (() => {
             }
         );
     }
-    
-    /**
-     * ONLINE STATUS
-     */
     
     function updateOnlineStatus() {
         const status = navigator.onLine;
@@ -1071,33 +884,22 @@ const App = (() => {
         
         if (navigator.onLine) {
             Notifications.notifyOnlineMode();
-            // Synchronizuj dane gdy wrócimy do online
             syncDataWhenOnline();
         } else {
             Notifications.notifyOfflineMode();
         }
     }
     
-    /**
-     * SYNCHRONIZACJA DANYCH
-     * Synchronizuje dane które były zmieniane w offline mode
-     */
-    
     function syncDataWhenOnline() {
         console.log('[App] Rozpoczynanie synchronizacji danych');
         
-        // Sprawdzenie czy są pending changes (oznaczone w bazie)
         const db = DB.getDatabase();
         
-        // W naszym przypadku LocalStorage zawsze jest zsynchronizowany
-        // ale możemy dodać log dla śledzenia
         const pendingChanges = db.transakcje.filter(t => t.pendingSync === true);
         
         if (pendingChanges.length > 0) {
             console.log(`[App] Znaleziono ${pendingChanges.length} pending zmian do synchronizacji`);
             
-            // Tutaj mogłabyśmy wysłać na serwer (jeśli by był)
-            // Na razie oznaczamy że dane są zsynchronizowane
             pendingChanges.forEach(t => {
                 t.pendingSync = false;
             });
@@ -1108,13 +910,8 @@ const App = (() => {
             console.log('[App] Brak zmian do synchronizacji');
         }
         
-        // Odśwież dashboard po sync
         refreshDashboard();
     }
-    
-    /**
-     * HELPER FUNCTIONS
-     */
     
     function getCategoryName(kategoria) {
         const names = {
@@ -1148,7 +945,6 @@ const App = (() => {
         return emojis[kategoria] || '💰';
     }
     
-    // Zwróć publiczne metody
     return {
         init,
         removeCategory,
@@ -1158,11 +954,9 @@ const App = (() => {
     };
 })();
 
-// Asynchronicznie ustaw globalne handlery po załadowaniu DOM
 document.addEventListener('DOMContentLoaded', function setupGlobalHandlers() {
     console.log('[Setup] Ustawianie globalnych handlerów...');
     
-    // Ustaw globalne funkcje dla HTML onclick
     window.App.handleAddExpenseCategory = function() {
         console.log('[Global] handleAddExpenseCategory');
         const input = document.getElementById('newExpenseCategory');
@@ -1179,7 +973,6 @@ document.addEventListener('DOMContentLoaded', function setupGlobalHandlers() {
         }
     };
     
-    // Ustaw removeCategory handler
     window.App.removeCategory = App.removeCategory;
     
     console.log('[Setup] Globalne handlery ustawione');
@@ -1187,7 +980,6 @@ document.addEventListener('DOMContentLoaded', function setupGlobalHandlers() {
     console.log('[Setup] window.App.handleAddIncomeCategory:', typeof window.App.handleAddIncomeCategory);
 });
 
-// Inicjalizuj aplikację
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', App.init);
 } else {
